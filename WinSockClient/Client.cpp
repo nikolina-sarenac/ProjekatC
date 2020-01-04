@@ -24,6 +24,8 @@ int __cdecl main(int argc, char **argv)
     int iResult;
     // message to send
     char messageToSend[MAX_SIZE];
+	int choose = 0;
+	char message[MAX_SIZE];
     
     // Validate the parameters
 
@@ -59,9 +61,34 @@ int __cdecl main(int argc, char **argv)
         WSACleanup();
     }
 	while (true) {
+		memset(messageToSend, 0, MAX_SIZE);
+		memcpy(messageToSend, "Publisher", strlen("Publisher"));
+		printf("Choose the topic:\n");
+		printf("1. Music\n");
+		printf("2. Movie\n");
+		printf("3. Books\n");
+		scanf("%d", &choose);
 
-		printf("Unesite string: ");
-		fgets(messageToSend, MAX_SIZE, stdin);
+
+		switch (choose)
+		{
+		case 1:
+			memset(messageToSend + strlen("Publisher"), choose, sizeof(char));
+		case 2:
+			memset(messageToSend + strlen("Publisher"), choose, sizeof(char));
+		case 3:
+			memset(messageToSend + strlen("Publisher"), choose, sizeof(char));
+
+		default:
+			break;
+		}
+
+		printf("Write the message: ");
+		//fgets(message, MAX_SIZE, stdin);
+		memset(message, 0, MAX_SIZE);
+		scanf("%s", message);
+		memcpy(messageToSend + strlen("Publisher") + 1, message, strlen(message));
+
 		// Send an prepared message with null terminator included
 		iResult = send( connectSocket, messageToSend, (int)strlen(messageToSend) + 1, 0 );
 

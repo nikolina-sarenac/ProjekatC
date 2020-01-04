@@ -1,5 +1,6 @@
 #define WIN32_LEAN_AND_MEAN
 #define _WINSOCK_DEPRECATED_NO_WARNINGS
+#define _CRT_SECURE_NO_WARNINGS
 
 #include <windows.h>
 #include <winsock2.h>
@@ -10,7 +11,7 @@
 
 #define DEFAULT_BUFLEN 512
 #define DEFAULT_PORT 27016
-
+#define MAX_SIZE 100
 // Initializes WinSock2 library
 // Returns true if succeeded, false otherwise.
 bool InitializeWindowsSockets();
@@ -22,8 +23,8 @@ int __cdecl main(int argc, char **argv)
 	// variable used to store function return value
 	int iResult;
 	// message to send
-	char *messageToSend = "this is a test";
-
+	char messageToSend[MAX_SIZE];
+	int choose = 0;
 	// Validate the parameters
 
 	if (InitializeWindowsSockets() == false)
@@ -58,18 +59,43 @@ int __cdecl main(int argc, char **argv)
 		WSACleanup();
 	}
 
-	// Send an prepared message with null terminator included
-	iResult = send(connectSocket, messageToSend, (int)strlen(messageToSend) + 1, 0);
+	while (true) {
+		memset(messageToSend, 0, MAX_SIZE);
+		memcpy(messageToSend, "Subscriber", strlen("Subscriber"));
+		printf("Choose the topic:\n");
+		printf("1. Music\n");
+		printf("2. Movie\n");
+		printf("3. Books\n");
+		scanf("%d", &choose);
 
-	if (iResult == SOCKET_ERROR)
-	{
-		printf("send failed with error: %d\n", WSAGetLastError());
-		closesocket(connectSocket);
-		WSACleanup();
-		return 1;
+		switch (choose)
+		{
+		case 1:
+			memset(messageToSend + strlen("Subscriber"), choose, sizeof(char));
+		case 2:
+			memset(messageToSend + strlen("Subscriber"), choose, sizeof(char));
+		case 3:
+			memset(messageToSend + strlen("Subscriber"), choose, sizeof(char));
+
+		default:
+			break;
+		}
+
+
+		// Send an prepared message with null terminator included
+		iResult = send(connectSocket, messageToSend, (int)strlen(messageToSend) + 1, 0);
+
+		if (iResult == SOCKET_ERROR)
+		{
+			printf("send failed with error: %d\n", WSAGetLastError());
+			closesocket(connectSocket);
+			WSACleanup();
+			return 1;
+		}
+
+		printf("Bytes Sent: %ld\n", iResult);
 	}
 
-	printf("Bytes Sent: %ld\n", iResult);
 	getchar();
 	// cleanup
 	closesocket(connectSocket);
