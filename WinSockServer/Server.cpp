@@ -4,6 +4,22 @@
 
 #define DEFAULT_BUFLEN 512
 #define DEFAULT_PORT "27016"
+#define MAX_SIZE 100
+
+
+typedef struct queue {
+	char value[MAX_SIZE];
+	struct queue *next;
+}queue;
+
+int sizeOfMessage = 0;
+
+
+void InitQueue(queue *head);
+void PushInQueue(queue* head, char *val);
+char *PopFromQueue(queue** head);
+void Delete_queue(queue* head);
+
 
 bool InitializeWindowsSockets();
 
@@ -17,6 +33,11 @@ int  main(void)
     int iResult;
     // Buffer used for storing incoming data
     char recvbuf[DEFAULT_BUFLEN];
+
+	//inicijalizacija head cvora u redu
+	queue* head_node = (queue*)malloc(sizeof(queue));
+
+
     
     if(InitializeWindowsSockets() == false)
     {
@@ -84,6 +105,7 @@ int  main(void)
 
 	printf("Server initialized, waiting for clients.\n");
 
+	InitQueue(head_node);
     do
     {
         // Wait for clients and accept client connections.
@@ -102,11 +124,13 @@ int  main(void)
 
         do
         {
+			memset(recvbuf, 0, strlen(recvbuf));
             // Receive data until the client shuts down the connection
             iResult = recv(acceptedSocket, recvbuf, DEFAULT_BUFLEN, 0);
             if (iResult > 0)
             {
                 printf("Message received from client: %s.\n", recvbuf);
+				
             }
             else if (iResult == 0)
             {
@@ -143,6 +167,58 @@ int  main(void)
 
     return 0;
 }
+
+
+void InitQueue(queue *head_node)
+{
+	
+
+	head_node->next = NULL;
+	memset(head_node->value, 0, MAX_SIZE);
+}
+
+
+void PushInQueue(queue* head, char *val) {
+	queue* current_node = head;
+	while (current_node->next != NULL) {
+		current_node = current_node->next;
+	}
+
+	queue* new_node = (queue*)malloc(sizeof(queue));
+	new_node->next = NULL;
+	memset(current_node->value, 0, MAX_SIZE);
+	memcpy(current_node->value, val, strlen(val));
+	current_node->next = new_node;
+}
+
+
+char *PopFromQueue(queue** head) {
+	if (*head == NULL) {
+		return NULL;
+	}
+	
+	queue* next_node = NULL;
+	next_node = (*head)->next;
+	char retVal[MAX_SIZE];
+	memset(retVal, 0, MAX_SIZE);
+	memcpy(retVal, (*head)->value, strlen((*head)->value));
+	free(*head);
+	*head = next_node;
+	sizeOfMessage = strlen(retVal);
+	return retVal;
+}
+
+void Delete_queue(queue* head) {
+	queue* current = head;
+	queue* next;
+
+	while (current != NULL) {
+		next = current->next;
+		free(current);
+		current = next;
+	}
+}
+
 
 bool InitializeWindowsSockets()
 {

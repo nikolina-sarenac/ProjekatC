@@ -1,3 +1,4 @@
 ﻿C:\Program Files (x86)\Microsoft Visual Studio\2017\Community\Common7\IDE\VC\VCTargets\Microsoft.CppBuild.targets(391,5): warning MSB8028: The intermediate directory (Debug\) contains files shared from another project (WinSockServer.vcxproj).  This can lead to incorrect clean and rebuild behavior.
   Server.cpp
-  WinSockServer.vcxproj -> C:\Users\DRAGOJLA\Desktop\ProjekatC\ProjekatProtokoli\Debug\PubSubServer.exe
+c:\users\dragojla\desktop\projekatprotokoli\projekatc\winsockserver\server.cpp(208): warning C4172: returning address of local variable or temporary: retVal
+  WinSockServer.vcxproj -> C:\Users\DRAGOJLA\Desktop\ProjekatProtokoli\ProjekatC\Debug\PubSubServer.exe

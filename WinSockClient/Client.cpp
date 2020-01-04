@@ -6,9 +6,11 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <conio.h>
+#include <string.h>
 
 #define DEFAULT_BUFLEN 512
 #define DEFAULT_PORT 27016
+#define MAX_SIZE 100
 
 // Initializes WinSock2 library
 // Returns true if succeeded, false otherwise.
@@ -21,7 +23,7 @@ int __cdecl main(int argc, char **argv)
     // variable used to store function return value
     int iResult;
     // message to send
-    char *messageToSend = "this is a test";
+    char messageToSend[MAX_SIZE];
     
     // Validate the parameters
 
@@ -56,19 +58,24 @@ int __cdecl main(int argc, char **argv)
         closesocket(connectSocket);
         WSACleanup();
     }
- 
-    // Send an prepared message with null terminator included
-    iResult = send( connectSocket, messageToSend, (int)strlen(messageToSend) + 1, 0 );
+	while (true) {
 
-    if (iResult == SOCKET_ERROR)
-    {
-        printf("send failed with error: %d\n", WSAGetLastError());
-        closesocket(connectSocket);
-        WSACleanup();
-        return 1;
-    }
+		printf("Unesite string: ");
+		fgets(messageToSend, MAX_SIZE, stdin);
+		// Send an prepared message with null terminator included
+		iResult = send( connectSocket, messageToSend, (int)strlen(messageToSend) + 1, 0 );
 
-    printf("Bytes Sent: %ld\n", iResult);
+		if (iResult == SOCKET_ERROR)
+		{
+			printf("send failed with error: %d\n", WSAGetLastError());
+			closesocket(connectSocket);
+			WSACleanup();
+			return 1;
+		}
+
+		printf("Bytes Sent: %ld\n", iResult);
+
+	}
 
 	getchar();
     // cleanup
