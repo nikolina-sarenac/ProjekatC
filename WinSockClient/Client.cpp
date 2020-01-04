@@ -26,7 +26,7 @@ int __cdecl main(int argc, char **argv)
     char messageToSend[MAX_SIZE];
 	int choose = 0;
 	char message[MAX_SIZE];
-    
+	memset(message, 0, MAX_SIZE);
     // Validate the parameters
 
     if(InitializeWindowsSockets() == false)
@@ -84,9 +84,13 @@ int __cdecl main(int argc, char **argv)
 		}
 
 		printf("Write the message: ");
-		//fgets(message, MAX_SIZE, stdin);
-		memset(message, 0, MAX_SIZE);
-		scanf("%s", message);
+		while(message[0] == 0 || message[0] == 10) {
+			
+			fgets(message, MAX_SIZE, stdin);
+		}
+		
+		
+		//scanf("%s", message);
 		memcpy(messageToSend + strlen("Publisher") + 1, message, strlen(message));
 
 		// Send an prepared message with null terminator included
