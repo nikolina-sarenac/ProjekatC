@@ -72,22 +72,26 @@ int __cdecl main(int argc, char **argv)
 
 	while (true) {
 		memset(messageToSend, 0, MAX_SIZE);
-		memcpy(messageToSend, "Publisher", strlen("Publisher"));
+		memcpy(messageToSend, "Publisher*", strlen("Publisher*"));
 		printf("Choose the topic:\n");
 		printf("1. Music\n");
-		printf("2. Movie\n");
+		printf("2. Movies\n");
 		printf("3. Books\n");
 		scanf("%d", &choose);
 
+		int pos = strlen("Publisher*");
 
 		switch (choose)
 		{
 		case 1:
-			memset(messageToSend + strlen("Publisher"), choose, sizeof(char));
+			memcpy(messageToSend + pos, "Music: ", strlen("Music: "));
+			pos = pos + strlen("Music: ");
 		case 2:
-			memset(messageToSend + strlen("Publisher"), choose, sizeof(char));
+			memcpy(messageToSend + pos, "Movies: ", strlen("Movies: "));
+			pos = pos + strlen("Movies: ");
 		case 3:
-			memset(messageToSend + strlen("Publisher"), choose, sizeof(char));
+			memcpy(messageToSend + pos, "Books: ", strlen("Books: "));
+			pos = pos + strlen("Books: ");
 
 		default:
 			break;
@@ -103,8 +107,7 @@ int __cdecl main(int argc, char **argv)
 			printf("Incorrect option");
 		}
 		
-		//scanf("%s", message);
-		memcpy(messageToSend + strlen("Publisher") + 1, message, strlen(message));
+		memcpy(messageToSend + pos, message, strlen(message));
 
 		Select(connectSocket, false);
 		// Send an prepared message with null terminator included

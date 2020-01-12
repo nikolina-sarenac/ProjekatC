@@ -61,21 +61,23 @@ int __cdecl main(int argc, char **argv)
 
 	while (true) {
 		memset(messageToSend, 0, MAX_SIZE);
-		memcpy(messageToSend, "Subscriber", strlen("Subscriber"));
-		printf("Choose the topic:\n");
+		memcpy(messageToSend, "Subscriber*", strlen("Subscriber*"));
+
+		printf("Subscribe to the topic:\n");
 		printf("1. Music\n");
-		printf("2. Movie\n");
+		printf("2. Movies\n");
 		printf("3. Books\n");
+		printf("4. Done\n");
 		scanf("%d", &choose);
 
 		switch (choose)
 		{
 		case 1:
-			memset(messageToSend + strlen("Subscriber"), choose, sizeof(char));
+			memcpy(messageToSend + strlen("Subscriber"), "Music", 5);
 		case 2:
-			memset(messageToSend + strlen("Subscriber"), choose, sizeof(char));
+			memcpy(messageToSend + strlen("Subscriber"), "Movies", 6);
 		case 3:
-			memset(messageToSend + strlen("Subscriber"), choose, sizeof(char));
+			memcpy(messageToSend + strlen("Subscriber"), "Books", 5);
 
 		default:
 			break;

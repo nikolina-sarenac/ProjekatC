@@ -1,6 +1,7 @@
 #include <ws2tcpip.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <string.h>
 
 #define DEFAULT_BUFLEN 512
 #define DEFAULT_PORT "27016"
@@ -54,39 +55,83 @@ DWORD WINAPI ClientThread(LPVOID lpParam) {
 
 	SOCKET acceptedSocket = ElementAt(id, listHead);
 
-	while (true) {
-		memset(buffer, 0, strlen(buffer));
-		// Receive data until the client shuts down the connection
-		Select(acceptedSocket, true);
-		iResult = recv(acceptedSocket, buffer, DEFAULT_BUFLEN, 0);
-		if (iResult > 0)
-		{
-			printf("Message received from client: %s.\n", buffer);
+	//primi prvu poruku i vidi koji je tip klijenta
+	memset(buffer, 0, strlen(buffer));
+	char *split;
+	// Receive data 
+	Select(acceptedSocket, true);
+	iResult = recv(acceptedSocket, buffer, DEFAULT_BUFLEN, 0);
+	if (iResult > 0)
+	{
+		char delim[] = "*";
+		split = strtok(buffer, delim);
+		printf("Message received from client: %s.\n", buffer);
 
-		}
-		else if (iResult == 0)
-		{
-			// connection was closed gracefully
-			printf("Connection with client closed.\n");
-			closesocket(acceptedSocket);
-			HANDLE h = HandleAt(id, listHead);
-			if (h != NULL)
-				CloseHandle(h);
-			RemoveAt(id, &listHead);
-			break;
-		}
-		else
-		{
-			// there was an error during recv
-			printf("recv failed with error: %d\n", WSAGetLastError());
-			closesocket(acceptedSocket);
-			HANDLE h = HandleAt(id, listHead);
-			if (h != NULL)
-				CloseHandle(h);
-			RemoveAt(id, &listHead);
-			break;
+	}
+	else if (iResult == 0)
+	{
+		// connection was closed gracefully
+		printf("Connection with client closed.\n");
+		closesocket(acceptedSocket);
+		HANDLE h = HandleAt(id, listHead);
+		if (h != NULL)
+			CloseHandle(h);
+		RemoveAt(id, &listHead);
+	}
+	else
+	{
+		// there was an error during recv
+		printf("recv failed with error: %d\n", WSAGetLastError());
+		closesocket(acceptedSocket);
+		HANDLE h = HandleAt(id, listHead);
+		if (h != NULL)
+			CloseHandle(h);
+		RemoveAt(id, &listHead);
+	}
+
+	
+
+	if (strcmp(split, "Publisher")) {
+		while (true) {
+			memset(buffer, 0, strlen(buffer));
+			// Receive data until the client shuts down the connection
+			Select(acceptedSocket, true);
+			iResult = recv(acceptedSocket, buffer, DEFAULT_BUFLEN, 0);
+			if (iResult > 0)
+			{
+				char delim[] = "*";
+				split = strtok(buffer, delim);
+				printf("Message received from client: %s.\n", buffer);
+			}
+			else if (iResult == 0)
+			{
+				// connection was closed gracefully
+				printf("Connection with client closed.\n");
+				closesocket(acceptedSocket);
+				HANDLE h = HandleAt(id, listHead);
+				if (h != NULL)
+					CloseHandle(h);
+				RemoveAt(id, &listHead);
+				break;
+			}
+			else
+			{
+				// there was an error during recv
+				printf("recv failed with error: %d\n", WSAGetLastError());
+				closesocket(acceptedSocket);
+				HANDLE h = HandleAt(id, listHead);
+				if (h != NULL)
+					CloseHandle(h);
+				RemoveAt(id, &listHead);
+				break;
+			}
 		}
 	}
+	else {
+
+	}
+
+	
 	memset(buffer, 0, strlen(buffer));
 	return 0;
 }
