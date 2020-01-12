@@ -1,4 +1,6 @@
-﻿C:\Program Files (x86)\Microsoft Visual Studio\2017\Community\Common7\IDE\VC\VCTargets\Microsoft.CppBuild.targets(391,5): warning MSB8028: The intermediate directory (Debug\) contains files shared from another project (WinSockServer.vcxproj).  This can lead to incorrect clean and rebuild behavior.
+﻿C:\Program Files (x86)\Microsoft Visual Studio\2017\Professional\Common7\IDE\VC\VCTargets\Microsoft.CppBuild.targets(391,5): warning MSB8028: The intermediate directory (Debug\) contains files shared from another project (WinSockServer.vcxproj).  This can lead to incorrect clean and rebuild behavior.
   Server.cpp
-c:\users\dragojla\desktop\projekatprotokoli\projekatc\winsockserver\server.cpp(208): warning C4172: returning address of local variable or temporary: retVal
-  WinSockServer.vcxproj -> C:\Users\DRAGOJLA\Desktop\ProjekatProtokoli\ProjekatC\Debug\PubSubServer.exe
+d:\faks\iv god\protokoli\projekat\projekatc\winsockserver\server.cpp(103): warning C4101: 'recvbuf': unreferenced local variable
+d:\faks\iv god\protokoli\projekat\projekatc\winsockserver\server.cpp(446): warning C4477: 'printf' : format string '%s' requires an argument of type 'char *', but variadic argument 1 has type 'int'
+d:\faks\iv god\protokoli\projekat\projekatc\winsockserver\server.cpp(266): warning C4172: returning address of local variable or temporary: retVal
+  WinSockServer.vcxproj -> D:\faks\IV god\Protokoli\Projekat\ProjekatC\Debug\PubSubServer.exe

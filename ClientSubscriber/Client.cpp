@@ -82,6 +82,7 @@ int __cdecl main(int argc, char **argv)
 		}
 
 
+
 		// Send an prepared message with null terminator included
 		iResult = send(connectSocket, messageToSend, (int)strlen(messageToSend) + 1, 0);
 

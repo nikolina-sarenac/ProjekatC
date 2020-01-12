@@ -15,6 +15,7 @@
 // Initializes WinSock2 library
 // Returns true if succeeded, false otherwise.
 bool InitializeWindowsSockets();
+void Select(SOCKET socket, bool read);
 
 int __cdecl main(int argc, char **argv) 
 {
@@ -60,6 +61,15 @@ int __cdecl main(int argc, char **argv)
         closesocket(connectSocket);
         WSACleanup();
     }
+
+	unsigned long mode = 1;
+	if (ioctlsocket(connectSocket, FIONBIO, &mode) == SOCKET_ERROR) {
+		printf("ioctl failed with error: %d\n", WSAGetLastError());
+		closesocket(connectSocket);
+		WSACleanup();
+		return 1;
+	}
+
 	while (true) {
 		memset(messageToSend, 0, MAX_SIZE);
 		memcpy(messageToSend, "Publisher", strlen("Publisher"));
@@ -83,16 +93,20 @@ int __cdecl main(int argc, char **argv)
 			break;
 		}
 
-		printf("Write the message: ");
-		while(message[0] == 0 || message[0] == 10) {
-			
-			fgets(message, MAX_SIZE, stdin);
+		if (choose > 0 && choose < 4) {
+			printf("Write the message: ");
+			while (message[0] == 0 || message[0] == 10) {
+				fgets(message, MAX_SIZE, stdin);
+			}
 		}
-		
+		else {
+			printf("Incorrect option");
+		}
 		
 		//scanf("%s", message);
 		memcpy(messageToSend + strlen("Publisher") + 1, message, strlen(message));
 
+		Select(connectSocket, false);
 		// Send an prepared message with null terminator included
 		iResult = send( connectSocket, messageToSend, (int)strlen(messageToSend) + 1, 0 );
 
@@ -105,6 +119,7 @@ int __cdecl main(int argc, char **argv)
 		}
 
 		printf("Bytes Sent: %ld\n", iResult);
+		message[0] = 0;
 
 	}
 
@@ -126,4 +141,38 @@ bool InitializeWindowsSockets()
         return false;
     }
 	return true;
+}
+
+void Select(SOCKET socket, bool read) {
+	while (true) {
+		// Initialize select parameters
+		FD_SET set;
+		timeval timeVal;
+		FD_ZERO(&set);
+		// Add socket we will wait to read from
+		FD_SET(socket, &set);
+		// Set timeouts to zero since we want select to return
+		// instantaneously
+		timeVal.tv_sec = 0;
+		timeVal.tv_usec = 0;
+		int iResult;
+
+		if (read) {
+			iResult = select(0 /* ignored */, &set, NULL, NULL, &timeVal);
+		}
+		else {
+			iResult = select(0 /* ignored */, NULL, &set, NULL, &timeVal);
+		}
+
+		if (iResult < 0) {
+			printf("Select failed with error: %s", WSAGetLastError());
+		}
+		else if (iResult == 0) {
+			Sleep(100);
+			continue;
+		}
+
+		return;
+	}
+
 }
