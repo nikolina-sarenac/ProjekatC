@@ -1,15 +1,15 @@
 ﻿C:\Program Files (x86)\Microsoft Visual Studio\2017\Professional\Common7\IDE\VC\VCTargets\Microsoft.CppBuild.targets(391,5): warning MSB8028: The intermediate directory (Debug\) contains files shared from another project (WinSockServer.vcxproj).  This can lead to incorrect clean and rebuild behavior.
   Server.cpp
-d:\faks\iv god\protokoli\projekat\projekatc\winsockserver\server.cpp(92): warning C4996: 'strtok': This function or variable may be unsafe. Consider using strtok_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+d:\faks\iv god\protokoli\projekat\projekatc\winsockserver\server.cpp(95): warning C4996: 'strtok': This function or variable may be unsafe. Consider using strtok_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
   c:\program files (x86)\windows kits\10\include\10.0.17134.0\ucrt\string.h(440): note: see declaration of 'strtok'
-d:\faks\iv god\protokoli\projekat\projekatc\winsockserver\server.cpp(127): warning C4996: 'strtok': This function or variable may be unsafe. Consider using strtok_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+d:\faks\iv god\protokoli\projekat\projekatc\winsockserver\server.cpp(134): warning C4996: 'strtok': This function or variable may be unsafe. Consider using strtok_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
   c:\program files (x86)\windows kits\10\include\10.0.17134.0\ucrt\string.h(440): note: see declaration of 'strtok'
-d:\faks\iv god\protokoli\projekat\projekatc\winsockserver\server.cpp(130): warning C4996: 'strtok': This function or variable may be unsafe. Consider using strtok_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+d:\faks\iv god\protokoli\projekat\projekatc\winsockserver\server.cpp(137): warning C4996: 'strtok': This function or variable may be unsafe. Consider using strtok_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
   c:\program files (x86)\windows kits\10\include\10.0.17134.0\ucrt\string.h(440): note: see declaration of 'strtok'
-d:\faks\iv god\protokoli\projekat\projekatc\winsockserver\server.cpp(132): warning C4996: 'strtok': This function or variable may be unsafe. Consider using strtok_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+d:\faks\iv god\protokoli\projekat\projekatc\winsockserver\server.cpp(139): warning C4996: 'strtok': This function or variable may be unsafe. Consider using strtok_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
   c:\program files (x86)\windows kits\10\include\10.0.17134.0\ucrt\string.h(440): note: see declaration of 'strtok'
-d:\faks\iv god\protokoli\projekat\projekatc\winsockserver\server.cpp(169): warning C4996: 'strtok': This function or variable may be unsafe. Consider using strtok_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+d:\faks\iv god\protokoli\projekat\projekatc\winsockserver\server.cpp(181): warning C4996: 'strtok': This function or variable may be unsafe. Consider using strtok_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
   c:\program files (x86)\windows kits\10\include\10.0.17134.0\ucrt\string.h(440): note: see declaration of 'strtok'
-d:\faks\iv god\protokoli\projekat\projekatc\winsockserver\server.cpp(201): warning C4101: 'recvbuf': unreferenced local variable
-d:\faks\iv god\protokoli\projekat\projekatc\winsockserver\server.cpp(649): warning C4477: 'printf' : format string '%s' requires an argument of type 'char *', but variadic argument 1 has type 'int'
+d:\faks\iv god\protokoli\projekat\projekatc\winsockserver\server.cpp(224): warning C4101: 'recvbuf': unreferenced local variable
+d:\faks\iv god\protokoli\projekat\projekatc\winsockserver\server.cpp(696): warning C4477: 'printf' : format string '%s' requires an argument of type 'char *', but variadic argument 1 has type 'int'
   WinSockServer.vcxproj -> D:\faks\IV god\Protokoli\Projekat\ProjekatC\Debug\PubSubServer.exe

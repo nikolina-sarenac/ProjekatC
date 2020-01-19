@@ -39,7 +39,8 @@ int sizeOfMessage = 0;
 
 void InitQueue(queue *head);
 void PushInQueue(queue** head, char *val);
-char* PopFromQueue(queue** head);
+int PopFromQueue(queue** head, char *message);
+int PopFromQueue2(List** head, char *message, int id);
 void Delete_queue(queue* head);
 
 void ListAdd(int number, SOCKET s, DWORD id, HANDLE h, List **head);
@@ -65,53 +66,59 @@ void Select(SOCKET socket, bool read);
 void InitializeDictionary(Dictionary** head);
 void DictionaryClear(Dictionary** head);
 
-
+CRITICAL_SECTION cs;
 
 List* listHead;
 Dictionary* dictionary;
 
 DWORD WINAPI ClientThread(LPVOID lpParam) {
-	int *idP = (int*)lpParam;  // pokazivac na int
-	int id = *idP;  // sacuvamo id
-	free(idP);   // oslobodimo pokazivac
+	int id = *((int*)lpParam);
+	free(lpParam);   // oslobodimo pokazivac
 
 	char buffer[DEFAULT_BUFLEN];
 	int iResult = 0;
 
+	EnterCriticalSection(&cs);
 	SOCKET acceptedSocket = ListElementAt(id, listHead);
+	LeaveCriticalSection(&cs);
 
 	//primi prvu poruku i vidi koji je tip klijenta
-	memset(buffer, 0, strlen(buffer));
+	memset(buffer, 0, DEFAULT_BUFLEN);
 	char *split;
 	// Receive data 
 	Select(acceptedSocket, true);
 	iResult = recv(acceptedSocket, buffer, DEFAULT_BUFLEN, 0);
 	if (iResult > 0)
 	{
-		printf("%s \n", buffer);
+		//printf("%s \n", buffer);
+		printf("Message received from client %d: %s.\n", id, buffer);
 		split = strtok(buffer, "*");
-		printf("1. split: %s\n", split);
+		//printf("1. split: %s\n", split);
 
 	}
 	else if (iResult == 0)
 	{
 		// connection was closed gracefully
 		printf("Connection with client closed.\n");
+		EnterCriticalSection(&cs);
 		closesocket(acceptedSocket);
 		HANDLE h = ListHandleAt(id, listHead);
 		if (h != NULL)
 			CloseHandle(h);
 		ListRemoveAt(id, &listHead);
+		LeaveCriticalSection(&cs);
 	}
 	else
 	{
 		// there was an error during recv
 		printf("recv failed with error: %d\n", WSAGetLastError());
 		closesocket(acceptedSocket);
+		EnterCriticalSection(&cs);
 		HANDLE h = ListHandleAt(id, listHead);
 		if (h != NULL)
 			CloseHandle(h);
 		ListRemoveAt(id, &listHead);
+		LeaveCriticalSection(&cs);
 	}
 
 	if (strcmp(split, "Publisher") == 0) {
@@ -122,20 +129,25 @@ DWORD WINAPI ClientThread(LPVOID lpParam) {
 			iResult = recv(acceptedSocket, buffer, DEFAULT_BUFLEN, 0);
 			if (iResult > 0)
 			{
-				printf("Message received from client: %s.\n", buffer);
+				printf("Message received from client %d: %s.\n", id, buffer);
 				// ovaj dio poruke je Publisher
 				char *split = strtok(buffer, "*");
 				//printf("Message received from client: ");
 				// dobicemo topic
 				char* topic = strtok(NULL, ":");
-				printf("Topic: %s\n", topic);
+				//printf("Topic: %s\n", topic);
 				char* message = strtok(NULL, "|");
-				printf("Message: %s\n", message);
+				//printf("Message: %s\n", message);
 
+				EnterCriticalSection(&cs);
 				ListID* clientIDs = DictionaryGetClients(topic, dictionary);
+				LeaveCriticalSection(&cs);
+
 
 				while (clientIDs != NULL) {
-					ListAddMessageToQueue(id, message, listHead);
+					EnterCriticalSection(&cs);
+					ListAddMessageToQueue(clientIDs->id, message, listHead);
+					LeaveCriticalSection(&cs);
 					clientIDs = clientIDs->next;
 				}
 				
@@ -167,19 +179,30 @@ DWORD WINAPI ClientThread(LPVOID lpParam) {
 	else {
 		//char* numberOfTopics = strtok(NULL, "*");
 		char* topics = strtok(NULL, "*");
+
+		EnterCriticalSection(&cs);
 		DictionaryAddClient(topics, id, &dictionary);
+		LeaveCriticalSection(&cs);
 
 		while (true) {
 			// proverava da li ima poruka u redu za ovog klijenta, ako ima, salje
+			char *message = (char*)malloc(520);
+			//memset(message, 0, 520);
+			EnterCriticalSection(&cs);
 			queue *messages = ListQueueAt(id, listHead);
-			char* message = PopFromQueue(&messages);
-			if (message != NULL) {
+			LeaveCriticalSection(&cs);
+			//char* message = 
+			EnterCriticalSection(&cs);
+			int ret = PopFromQueue2(&listHead, message, id);
+			LeaveCriticalSection(&cs);
+			if (ret > 0) {
+				EnterCriticalSection(&cs);
 				SOCKET s = ListElementAt(id, listHead);
+				LeaveCriticalSection(&cs);
 				Select(s, false);
 				iResult = send(s, message, int(strlen(message)), 0);
-				free(message);
 			}
-
+			free(message);
 			Sleep(500);
 		}
 	}
@@ -281,7 +304,7 @@ int  main(void)
 	}
 
 	printf("Server initialized, waiting for clients.\n");
-
+	InitializeCriticalSection(&cs);
 	
     do
     {
@@ -321,6 +344,7 @@ int  main(void)
         return 1;
     }
 
+	DeleteCriticalSection(&cs);
     // cleanup
     closesocket(listenSocket);
     closesocket(acceptedSocket);
@@ -365,20 +389,43 @@ void PushInQueue(queue **head, char *val) {
 
 }
 
-char* PopFromQueue(queue** head) {
+int PopFromQueue(queue** head, char *message) {
 	if (*head == NULL) {
-		return NULL;
+		return 0;
 	}
 	
 	queue* next_node = NULL;
 	next_node = (*head)->next;
-	char* retVal = (char*)malloc(strlen((*head)->value) + 1);
-	memset(retVal, 0, MAX_SIZE);
-	memcpy(retVal, (*head)->value, strlen((*head)->value));
+	//char* retVal = (char*)malloc(strlen((*head)->value) + 1);
+	memset(message, 0, 520);
+	memcpy(message, (*head)->value, strlen((*head)->value));
 	free(*head);
 	*head = next_node;
-	sizeOfMessage = strlen(retVal);
-	return retVal;
+	sizeOfMessage = strlen(message);
+	return sizeOfMessage;
+}
+
+int PopFromQueue2(List** head, char *message, int id) {
+
+	if (*head != NULL) {
+		List *temp = *head;
+
+		while (temp->num != id) {
+			temp = temp->next;
+		}
+		
+		if (temp->clientMessages != NULL) {
+			queue* q = NULL;
+			q = temp->clientMessages;
+			temp->clientMessages = temp->clientMessages->next;
+			memset(message, 0, 520);
+			memcpy(message, q->value, strlen(q->value));
+			free(q);
+			sizeOfMessage = strlen(message);
+			return sizeOfMessage;
+		}
+	}
+	return 0;
 }
 
 void Delete_queue(queue* head) {
