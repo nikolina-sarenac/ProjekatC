@@ -70,6 +70,10 @@ int __cdecl main(int argc, char **argv)
 		return 1;
 	}
 
+	Select(connectSocket, false);
+	// Send an prepared message with null terminator included
+	iResult = send(connectSocket, "Publisher*X", (int)strlen("Publisher*X"), 0);
+
 	while (true) {
 		memset(messageToSend, 0, MAX_SIZE);
 		memcpy(messageToSend, "Publisher*", strlen("Publisher*"));
@@ -84,14 +88,17 @@ int __cdecl main(int argc, char **argv)
 		switch (choose)
 		{
 		case 1:
-			memcpy(messageToSend + pos, "Music: ", strlen("Music: "));
-			pos = pos + strlen("Music: ");
+			memcpy(messageToSend + pos, "Music:", strlen("Music:"));
+			pos = pos + strlen("Music:");
+			break;
 		case 2:
-			memcpy(messageToSend + pos, "Movies: ", strlen("Movies: "));
-			pos = pos + strlen("Movies: ");
+			memcpy(messageToSend + pos, "Movies:", strlen("Movies:"));
+			pos = pos + strlen("Movies:");
+			break;
 		case 3:
-			memcpy(messageToSend + pos, "Books: ", strlen("Books: "));
-			pos = pos + strlen("Books: ");
+			memcpy(messageToSend + pos, "Books:", strlen("Books:"));
+			pos = pos + strlen("Books:");
+			break;
 
 		default:
 			break;
@@ -108,6 +115,7 @@ int __cdecl main(int argc, char **argv)
 		}
 		
 		memcpy(messageToSend + pos, message, strlen(message));
+		memcpy(messageToSend + pos + strlen(message), " ", 1);
 
 		Select(connectSocket, false);
 		// Send an prepared message with null terminator included

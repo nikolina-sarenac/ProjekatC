@@ -15,6 +15,7 @@
 // Initializes WinSock2 library
 // Returns true if succeeded, false otherwise.
 bool InitializeWindowsSockets();
+void Select(SOCKET socket, bool read);
 
 int __cdecl main(int argc, char **argv)
 {
@@ -24,6 +25,8 @@ int __cdecl main(int argc, char **argv)
 	int iResult;
 	// message to send
 	char messageToSend[MAX_SIZE];
+	char buffer[DEFAULT_BUFLEN];
+	memset(buffer, 0, DEFAULT_BUFLEN);
 	int choose = 0;
 	// Validate the parameters
 
@@ -59,44 +62,78 @@ int __cdecl main(int argc, char **argv)
 		WSACleanup();
 	}
 
+	unsigned long mode = 1;
+	if (ioctlsocket(connectSocket, FIONBIO, &mode) == SOCKET_ERROR) {
+		printf("ioctl failed with error: %d\n", WSAGetLastError());
+		closesocket(connectSocket);
+		WSACleanup();
+		return 1;
+	}
+
+	memset(messageToSend, 0, MAX_SIZE);
+	memcpy(messageToSend, "Subscriber*", strlen("Subscriber*"));
+
+	printf("Subscribe to the topic:\n");
+	printf("1. Music\n");
+	printf("2. Movies\n");
+	printf("3. Books\n");
+	printf("4. Done\n");
+	scanf("%d", &choose);
+
+	switch (choose)
+	{
+	case 1:
+		memcpy(messageToSend + strlen("Subscriber*"), "Music", 5);
+		break;
+	case 2:
+		memcpy(messageToSend + strlen("Subscriber*"), "Movies", 6);
+		break;
+	case 3:
+		memcpy(messageToSend + strlen("Subscriber*"), "Books", 5);
+		break;
+
+	default:
+		break;
+	}
+
+
+	Select(connectSocket, false);
+	// Send an prepared message with null terminator included
+	iResult = send(connectSocket, messageToSend, (int)strlen(messageToSend), 0);
+
+	if (iResult == SOCKET_ERROR)
+	{
+		printf("send failed with error: %d\n", WSAGetLastError());
+		closesocket(connectSocket);
+		WSACleanup();
+		return 1;
+	}
+
+	printf("Bytes Sent: %ld\n", iResult);
+
+
 	while (true) {
-		memset(messageToSend, 0, MAX_SIZE);
-		memcpy(messageToSend, "Subscriber*", strlen("Subscriber*"));
-
-		printf("Subscribe to the topic:\n");
-		printf("1. Music\n");
-		printf("2. Movies\n");
-		printf("3. Books\n");
-		printf("4. Done\n");
-		scanf("%d", &choose);
-
-		switch (choose)
+		Select(connectSocket, true);
+		iResult = recv(connectSocket, buffer, DEFAULT_BUFLEN, 0);
+		if (iResult > 0)
 		{
-		case 1:
-			memcpy(messageToSend + strlen("Subscriber"), "Music", 5);
-		case 2:
-			memcpy(messageToSend + strlen("Subscriber"), "Movies", 6);
-		case 3:
-			memcpy(messageToSend + strlen("Subscriber"), "Books", 5);
+			printf("Message received from server: %s.\n", buffer);
 
-		default:
+		}
+		else if (iResult == 0)
+		{
+			// connection was closed gracefully
+			printf("Connection with server closed.\n");
+			closesocket(connectSocket);
 			break;
 		}
-
-
-
-		// Send an prepared message with null terminator included
-		iResult = send(connectSocket, messageToSend, (int)strlen(messageToSend) + 1, 0);
-
-		if (iResult == SOCKET_ERROR)
+		else
 		{
-			printf("send failed with error: %d\n", WSAGetLastError());
+			// there was an error during recv
+			printf("recv failed with error: %d\n", WSAGetLastError());
 			closesocket(connectSocket);
-			WSACleanup();
-			return 1;
+			break;
 		}
-
-		printf("Bytes Sent: %ld\n", iResult);
 	}
 
 	getchar();
@@ -117,4 +154,38 @@ bool InitializeWindowsSockets()
 		return false;
 	}
 	return true;
+}
+
+void Select(SOCKET socket, bool read) {
+	while (true) {
+		// Initialize select parameters
+		FD_SET set;
+		timeval timeVal;
+		FD_ZERO(&set);
+		// Add socket we will wait to read from
+		FD_SET(socket, &set);
+		// Set timeouts to zero since we want select to return
+		// instantaneously
+		timeVal.tv_sec = 0;
+		timeVal.tv_usec = 0;
+		int iResult;
+
+		if (read) {
+			iResult = select(0 /* ignored */, &set, NULL, NULL, &timeVal);
+		}
+		else {
+			iResult = select(0 /* ignored */, NULL, &set, NULL, &timeVal);
+		}
+
+		if (iResult < 0) {
+			printf("Select failed with error: %s", WSAGetLastError());
+		}
+		else if (iResult == 0) {
+			Sleep(100);
+			continue;
+		}
+
+		return;
+	}
+
 }

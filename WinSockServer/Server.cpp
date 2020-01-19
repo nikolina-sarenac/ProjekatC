@@ -20,30 +20,55 @@ typedef struct list
 	DWORD threadID;
 	HANDLE clienth;
 	struct list *next;
+	struct queue *clientMessages;
 }List;
+
+typedef struct listID {
+	int id;
+	struct listID* next;
+}ListID;
+
+typedef struct dict{
+	char* topic;
+	struct listID* clients;
+	struct dict* next;
+}Dictionary;
 
 int sizeOfMessage = 0;
 
 
 void InitQueue(queue *head);
-void PushInQueue(queue* head, char *val);
+void PushInQueue(queue** head, char *val);
 char* PopFromQueue(queue** head);
 void Delete_queue(queue* head);
 
-void Add(int number, SOCKET s, DWORD id, HANDLE h, List **head);
-int Count(List* head);
-void Insert(int index, int number, SOCKET s, DWORD id, HANDLE h, List **head);
-SOCKET ElementAt(int index, List *head);
-HANDLE HandleAt(int index, List *head);
+void ListAdd(int number, SOCKET s, DWORD id, HANDLE h, List **head);
+int ListCount(List* head);
+void ListInsert(int index, int number, SOCKET s, DWORD id, HANDLE h, List **head);
+SOCKET ListElementAt(int index, List *head);
+HANDLE ListHandleAt(int index, List *head);
+queue* ListQueueAt(int index, List *head);
 void ModifyListAt(int index, DWORD id, HANDLE handle, list *head);
-void RemoveAt(int index, List **head);
-void Clear(List **head);
+void ListRemoveAt(int index, List **head);
+void ListAddMessageToQueue(int id, char* message, list *head);
+void ListClear(List **head);
+
+void DictionaryAddClient(char *topic, int id, Dictionary** head);
+ListID* DictionaryGetClients(char *topic, Dictionary* head);
+
+void ListIDAdd(int id, ListID** head);
+void ListIDClear(ListID **head);
 
 
 bool InitializeWindowsSockets();
 void Select(SOCKET socket, bool read);
+void InitializeDictionary(Dictionary** head);
+void DictionaryClear(Dictionary** head);
+
+
 
 List* listHead;
+Dictionary* dictionary;
 
 DWORD WINAPI ClientThread(LPVOID lpParam) {
 	int *idP = (int*)lpParam;  // pokazivac na int
@@ -53,7 +78,7 @@ DWORD WINAPI ClientThread(LPVOID lpParam) {
 	char buffer[DEFAULT_BUFLEN];
 	int iResult = 0;
 
-	SOCKET acceptedSocket = ElementAt(id, listHead);
+	SOCKET acceptedSocket = ListElementAt(id, listHead);
 
 	//primi prvu poruku i vidi koji je tip klijenta
 	memset(buffer, 0, strlen(buffer));
@@ -63,9 +88,9 @@ DWORD WINAPI ClientThread(LPVOID lpParam) {
 	iResult = recv(acceptedSocket, buffer, DEFAULT_BUFLEN, 0);
 	if (iResult > 0)
 	{
-		char delim[] = "*";
-		split = strtok(buffer, delim);
-		printf("Message received from client: %s.\n", buffer);
+		printf("%s \n", buffer);
+		split = strtok(buffer, "*");
+		printf("1. split: %s\n", split);
 
 	}
 	else if (iResult == 0)
@@ -73,25 +98,23 @@ DWORD WINAPI ClientThread(LPVOID lpParam) {
 		// connection was closed gracefully
 		printf("Connection with client closed.\n");
 		closesocket(acceptedSocket);
-		HANDLE h = HandleAt(id, listHead);
+		HANDLE h = ListHandleAt(id, listHead);
 		if (h != NULL)
 			CloseHandle(h);
-		RemoveAt(id, &listHead);
+		ListRemoveAt(id, &listHead);
 	}
 	else
 	{
 		// there was an error during recv
 		printf("recv failed with error: %d\n", WSAGetLastError());
 		closesocket(acceptedSocket);
-		HANDLE h = HandleAt(id, listHead);
+		HANDLE h = ListHandleAt(id, listHead);
 		if (h != NULL)
 			CloseHandle(h);
-		RemoveAt(id, &listHead);
+		ListRemoveAt(id, &listHead);
 	}
 
-	
-
-	if (strcmp(split, "Publisher")) {
+	if (strcmp(split, "Publisher") == 0) {
 		while (true) {
 			memset(buffer, 0, strlen(buffer));
 			// Receive data until the client shuts down the connection
@@ -99,19 +122,33 @@ DWORD WINAPI ClientThread(LPVOID lpParam) {
 			iResult = recv(acceptedSocket, buffer, DEFAULT_BUFLEN, 0);
 			if (iResult > 0)
 			{
-				char delim[] = "*";
-				split = strtok(buffer, delim);
 				printf("Message received from client: %s.\n", buffer);
+				// ovaj dio poruke je Publisher
+				char *split = strtok(buffer, "*");
+				//printf("Message received from client: ");
+				// dobicemo topic
+				char* topic = strtok(NULL, ":");
+				printf("Topic: %s\n", topic);
+				char* message = strtok(NULL, "|");
+				printf("Message: %s\n", message);
+
+				ListID* clientIDs = DictionaryGetClients(topic, dictionary);
+
+				while (clientIDs != NULL) {
+					ListAddMessageToQueue(id, message, listHead);
+					clientIDs = clientIDs->next;
+				}
+				
 			}
 			else if (iResult == 0)
 			{
 				// connection was closed gracefully
 				printf("Connection with client closed.\n");
 				closesocket(acceptedSocket);
-				HANDLE h = HandleAt(id, listHead);
+				HANDLE h = ListHandleAt(id, listHead);
 				if (h != NULL)
 					CloseHandle(h);
-				RemoveAt(id, &listHead);
+				ListRemoveAt(id, &listHead);
 				break;
 			}
 			else
@@ -119,16 +156,32 @@ DWORD WINAPI ClientThread(LPVOID lpParam) {
 				// there was an error during recv
 				printf("recv failed with error: %d\n", WSAGetLastError());
 				closesocket(acceptedSocket);
-				HANDLE h = HandleAt(id, listHead);
+				HANDLE h = ListHandleAt(id, listHead);
 				if (h != NULL)
 					CloseHandle(h);
-				RemoveAt(id, &listHead);
+				ListRemoveAt(id, &listHead);
 				break;
 			}
 		}
 	}
 	else {
+		//char* numberOfTopics = strtok(NULL, "*");
+		char* topics = strtok(NULL, "*");
+		DictionaryAddClient(topics, id, &dictionary);
 
+		while (true) {
+			// proverava da li ima poruka u redu za ovog klijenta, ako ima, salje
+			queue *messages = ListQueueAt(id, listHead);
+			char* message = PopFromQueue(&messages);
+			if (message != NULL) {
+				SOCKET s = ListElementAt(id, listHead);
+				Select(s, false);
+				iResult = send(s, message, int(strlen(message)), 0);
+				free(message);
+			}
+
+			Sleep(500);
+		}
 	}
 
 	
@@ -148,12 +201,13 @@ int  main(void)
     char recvbuf[DEFAULT_BUFLEN];
 
 	int id = 0;
+	dictionary = NULL;
+	listHead = NULL;
+	InitializeDictionary(&dictionary);
 
 	//inicijalizacija head cvora u redu
-	queue* head_node = (queue*)malloc(sizeof(queue));
+	
 
-
-    
     if(InitializeWindowsSockets() == false)
     {
 		// we won't log anything since it will be logged
@@ -228,7 +282,7 @@ int  main(void)
 
 	printf("Server initialized, waiting for clients.\n");
 
-	InitQueue(head_node);
+	
     do
     {
         // Wait for clients and accept client connections.
@@ -246,7 +300,7 @@ int  main(void)
             return 1;
         }
 
-		Add(id, acceptedSocket, 0, NULL, &listHead);
+		ListAdd(id, acceptedSocket, 0, NULL, &listHead);
 		DWORD dw;
 		HANDLE hThread;
 		int *param = (int*)malloc(sizeof(int));
@@ -282,17 +336,33 @@ void InitQueue(queue *head_node)
 	memset(head_node->value, 0, MAX_SIZE);
 }
 
-void PushInQueue(queue* head, char *val) {
-	queue* current_node = head;
-	while (current_node->next != NULL) {
-		current_node = current_node->next;
-	}
+void PushInQueue(queue **head, char *val) {
 
 	queue* new_node = (queue*)malloc(sizeof(queue));
 	new_node->next = NULL;
-	memset(current_node->value, 0, MAX_SIZE);
-	memcpy(current_node->value, val, strlen(val));
-	current_node->next = new_node;
+
+	if (*head == NULL)
+	{
+		*head = new_node;
+		memset((*head)->value, 0, MAX_SIZE);
+		memcpy((*head)->value, val, strlen(val));
+		(*head)->next = NULL;
+		
+	}
+	else 
+	{
+		queue* current_node = *head;
+		while (current_node->next != NULL) {
+			current_node = current_node->next;
+		}
+
+		
+		memset(new_node->value, 0, MAX_SIZE);
+		memcpy(new_node->value, val, strlen(val));
+		current_node->next = new_node;
+	}
+
+
 }
 
 char* PopFromQueue(queue** head) {
@@ -302,7 +372,7 @@ char* PopFromQueue(queue** head) {
 	
 	queue* next_node = NULL;
 	next_node = (*head)->next;
-	char retVal[MAX_SIZE];
+	char* retVal = (char*)malloc(strlen((*head)->value) + 1);
 	memset(retVal, 0, MAX_SIZE);
 	memcpy(retVal, (*head)->value, strlen((*head)->value));
 	free(*head);
@@ -322,7 +392,7 @@ void Delete_queue(queue* head) {
 	}
 }
 
-void Add(int number, SOCKET s, DWORD id, HANDLE h, List **head)
+void ListAdd(int number, SOCKET s, DWORD id, HANDLE h, List **head)
 {
 	List* el;
 	el = (List*)malloc(sizeof(List));
@@ -330,6 +400,7 @@ void Add(int number, SOCKET s, DWORD id, HANDLE h, List **head)
 	el->s = s;
 	el->threadID = id;
 	el->clienth = h;
+	el->clientMessages = NULL;
 	el->next = NULL;
 	if (*head == NULL) {
 		*head = el;
@@ -343,7 +414,7 @@ void Add(int number, SOCKET s, DWORD id, HANDLE h, List **head)
 	}
 }
 
-int Count(List* head)
+int ListCount(List* head)
 {
 	List *temp = head;
 	int ret = 0;
@@ -354,18 +425,19 @@ int Count(List* head)
 	return ret;
 }
 
-void Insert(int index, int number, SOCKET s, DWORD id, HANDLE h, List **head)
+void ListInsert(int index, int number, SOCKET s, DWORD id, HANDLE h, List **head)
 {
 	List* novi = (List*)malloc(sizeof(List));
 	novi->num = number;
 	novi->s = s;
 	novi->threadID = id;
 	novi->clienth = h;
+	novi->clientMessages = NULL;
 	if (index == 0) {
 		novi->next = *head;
 		*head = novi;
 	}
-	else if (Count(*head) > index) {
+	else if (ListCount(*head) > index) {
 		int cnt = 0;
 		List *temp = *head;
 
@@ -379,9 +451,9 @@ void Insert(int index, int number, SOCKET s, DWORD id, HANDLE h, List **head)
 	}
 }
 
-SOCKET ElementAt(int index, List *head)
+SOCKET ListElementAt(int index, List *head)
 {
-	if (Count(head) > 0) {
+	if (ListCount(head) > 0) {
 		List *temp = head;
 
 		while (temp->num != index) {
@@ -392,8 +464,8 @@ SOCKET ElementAt(int index, List *head)
 	return NULL;
 }
 
-HANDLE HandleAt(int index, List *head) {
-	if (Count(head) > 0) {
+HANDLE ListHandleAt(int index, List *head) {
+	if (ListCount(head) > 0) {
 		List *temp = head;
 
 		while (temp->num != index) {
@@ -404,7 +476,19 @@ HANDLE HandleAt(int index, List *head) {
 	return NULL;
 }
 
-void RemoveAt(int index, List **head)
+queue* ListQueueAt(int index, List *head) {
+	if (head != NULL) {
+		List *temp = head;
+
+		while (temp->num != index) {
+			temp = temp->next;
+		}
+		return temp->clientMessages;
+	}
+	return NULL;
+}
+
+void ListRemoveAt(int index, List **head)
 {
 	if (index == 0) {
 		List *del = *head;
@@ -420,12 +504,25 @@ void RemoveAt(int index, List **head)
 		}
 		List *del = pom->next;
 		pom->next = del->next;
+		Delete_queue(del->clientMessages);
 		free(del);
 	}
 }
 
+void ListAddMessageToQueue(int id, char * message, list * head)
+{
+	if (head != NULL) {
+		List *temp = head;
+
+		while (temp->num != id) {
+			temp = temp->next;
+		}
+		PushInQueue(&(temp->clientMessages), message);
+	}
+}
+
 void ModifyListAt(int index, DWORD id, HANDLE handle, list *head) {
-	if (Count(head) > 0) {
+	if (ListCount(head) > 0) {
 		List *temp = head;
 
 		while (temp->num != index) {
@@ -436,7 +533,7 @@ void ModifyListAt(int index, DWORD id, HANDLE handle, list *head) {
 	}
 }
 
-void Clear(List **head)
+void ListClear(List **head)
 {
 	List *current = *head;
 	List *next;
@@ -444,6 +541,7 @@ void Clear(List **head)
 	while (current) {
 		closesocket(current->s);
 		CloseHandle(current->clienth);
+		Delete_queue(current->clientMessages);
 		next = current->next;
 		free(current);
 		current = next;
@@ -452,7 +550,67 @@ void Clear(List **head)
 	*head = NULL;
 }
 
+void DictionaryAddClient(char * topic, int id, Dictionary **head)
+{
+	if (head != NULL) {
+		Dictionary *temp = *head;
 
+		while (strcmp(topic, temp->topic)) {
+			temp = temp->next;
+			if (temp == NULL)
+				break;
+		}
+		ListIDAdd(id, &(temp->clients));
+	}
+}
+
+ListID* DictionaryGetClients(char * topic, Dictionary *head)
+{
+	if (head != NULL) {
+		Dictionary *temp = head;
+
+		while (strcmp(topic, temp->topic)) {
+			temp = temp->next;
+		}
+		return temp->clients;
+	}
+	return NULL;
+}
+
+void ListIDAdd(int id, ListID ** head)
+{
+	if (*head == NULL) {
+		ListID *element = (ListID*)malloc(sizeof(Dictionary));
+		element->id = id;
+		element->next = NULL;
+		*head = element;
+	}
+	else {
+		ListID *element = (ListID*)malloc(sizeof(ListID));
+		element->id = id;
+		element->next = NULL;
+
+		ListID *temp = *head;
+		while (temp->next != NULL) {
+			temp = temp->next;
+		}
+		temp->next = element;
+	}
+}
+
+void ListIDClear(ListID ** head)
+{
+	ListID *current = *head;
+	ListID *next;
+
+	while (current) {
+		next = current->next;
+		free(current);
+		current = next;
+	}
+
+	*head = NULL;
+}
 
 bool InitializeWindowsSockets()
 {
@@ -498,4 +656,38 @@ void Select(SOCKET socket, bool read) {
 		return;
 	}
 
+}
+
+void InitializeDictionary(Dictionary** head) {
+	*head = (Dictionary*)malloc(sizeof(Dictionary));
+
+	(*head)->topic = "Music";
+	(*head)->clients = NULL;
+	(*head)->next = NULL;
+
+	Dictionary *element = (Dictionary*)malloc(sizeof(Dictionary));
+	element->topic = "Movies";
+	element->clients = NULL;
+	element->next = NULL;
+	(*head)->next = element;
+
+	Dictionary *element2 = (Dictionary*)malloc(sizeof(Dictionary));
+	element2->topic = "Books";
+	element2->clients = NULL;
+	element2->next = NULL;
+	element->next = element2;
+}
+
+void DictionaryClear(Dictionary** head) {
+	Dictionary *current = *head;
+	Dictionary *next;
+
+	while (current) {
+		ListIDClear(&(current->clients));
+		next = current->next;
+		free(current);
+		current = next;
+	}
+
+	*head = NULL;
 }
