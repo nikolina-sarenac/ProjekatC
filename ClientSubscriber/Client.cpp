@@ -25,6 +25,7 @@ int __cdecl main(int argc, char **argv)
 	int iResult;
 	// message to send
 	char messageToSend[MAX_SIZE];
+	char topics[MAX_SIZE];
 	char buffer[DEFAULT_BUFLEN];
 	memset(buffer, 0, DEFAULT_BUFLEN);
 	int choose = 0;
@@ -71,9 +72,103 @@ int __cdecl main(int argc, char **argv)
 	}
 
 	memset(messageToSend, 0, MAX_SIZE);
+	memset(topics, 0, MAX_SIZE);
 	memcpy(messageToSend, "Subscriber*", strlen("Subscriber*"));
 
-	printf("Subscribe to the topic:\n");
+	int choice = 0;
+	int position = 0;
+	int topicsChosen[3] = {0, 0, 0};
+	int numberOfTopics = 0;
+	do {
+		bool error = false;
+
+		printf("Subscribe to the topic:\n");
+		if (topicsChosen[0] == 0)
+			printf("1. Music\n");
+		if (topicsChosen[1] == 0)
+			printf("2. Movies\n");
+		if (topicsChosen[2] == 0)
+			printf("3. Books\n");
+		printf("4. Done\n");
+
+		scanf("%d", &choose);
+
+		switch (choose)
+		{
+		case 1:
+			if (topicsChosen[0] == 0) {
+				memcpy(topics + position, "Music,", 6);
+				position += 6;
+				numberOfTopics += 1;
+				topicsChosen[0] = 1;
+				break;
+			}
+			else {
+				printf("Unavailable option\n");
+				error = true;
+				break;
+			}
+		case 2:
+			if (topicsChosen[1] == 0) {
+				memcpy(topics + position, "Movies,", 7);
+				position += 7;
+				numberOfTopics += 1;
+				topicsChosen[1] = 1;
+				break;
+			}
+			else {
+				printf("Unavailable option\n");
+				error = true;
+				break;
+			}
+		case 3:
+			if (topicsChosen[2] == 0) {
+				memcpy(topics + position, "Books,", 6);
+				position += 6;
+				numberOfTopics += 1;
+				topicsChosen[2] = 1;
+				break;
+			}
+			else {
+				printf("Unavailable option\n");
+				error = true;
+				break;
+			}
+		case 4:
+			if (numberOfTopics == 0) {
+				printf("Please select at least one topic.\n\n");
+				error = true;
+			}
+			break;
+		default:
+			printf("Incorrect input, please choose topic again.\n\n");
+			error = true;
+			break;
+		}
+
+		if (!error) {
+			printf("Topics selected: %s\n\n", topics);
+		}
+	} while (choose != 4 || numberOfTopics == 0);
+
+	position = strlen("Subscriber*");
+	if (numberOfTopics == 1) {
+		memcpy(messageToSend + position, "1*", 2);
+		position += 2;
+	}
+	else if (numberOfTopics == 2) {
+		memcpy(messageToSend + position, "2*", 2);
+		position += 2;
+	}
+	else {
+		memcpy(messageToSend + position, "3*", 2);
+		position += 2;
+	}
+
+	memcpy(messageToSend + position, topics, strlen(topics));
+	printf("Message to send: %s\n\n", messageToSend);
+
+	/*printf("Subscribe to the topic:\n");
 	printf("1. Music\n");
 	printf("2. Movies\n");
 	printf("3. Books\n");
@@ -94,11 +189,9 @@ int __cdecl main(int argc, char **argv)
 
 	default:
 		break;
-	}
-
+	}*/
 
 	Select(connectSocket, false);
-	// Send an prepared message with null terminator included
 	iResult = send(connectSocket, messageToSend, (int)strlen(messageToSend), 0);
 
 	if (iResult == SOCKET_ERROR)
@@ -109,15 +202,15 @@ int __cdecl main(int argc, char **argv)
 		return 1;
 	}
 
-	printf("Bytes Sent: %ld\n", iResult);
-
+	//printf("Bytes Sent: %ld\n", iResult);
+	printf("You are now being notified whenever a message is published in selected topics.\n\n");
 
 	while (true) {
 		Select(connectSocket, true);
 		iResult = recv(connectSocket, buffer, DEFAULT_BUFLEN, 0);
 		if (iResult > 0)
 		{
-			printf("Message received from server: %s.\n", buffer);
+			printf("Message received from server: %s\n", buffer);
 
 		}
 		else if (iResult == 0)

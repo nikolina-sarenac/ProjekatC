@@ -107,6 +107,7 @@ DWORD WINAPI ClientThread(LPVOID lpParam) {
 			CloseHandle(h);
 		ListRemoveAt(id, &listHead);
 		LeaveCriticalSection(&cs);
+		return 0;
 	}
 	else
 	{
@@ -119,6 +120,7 @@ DWORD WINAPI ClientThread(LPVOID lpParam) {
 			CloseHandle(h);
 		ListRemoveAt(id, &listHead);
 		LeaveCriticalSection(&cs);
+		return 0;
 	}
 
 	if (strcmp(split, "Publisher") == 0) {
@@ -136,16 +138,22 @@ DWORD WINAPI ClientThread(LPVOID lpParam) {
 				// dobicemo topic
 				char* topic = strtok(NULL, ":");
 				//printf("Topic: %s\n", topic);
-				char* message = strtok(NULL, "|");
+				char* text = strtok(NULL, "|");
 				//printf("Message: %s\n", message);
 
 				EnterCriticalSection(&cs);
 				ListID* clientIDs = DictionaryGetClients(topic, dictionary);
 				LeaveCriticalSection(&cs);
 
+				char message[MAX_SIZE];
+				memset(message, 0, MAX_SIZE);
+				memcpy(message, topic, strlen(topic));
+				memcpy(message + strlen(topic), ":", 1);
+				memcpy(message + strlen(topic) + 1, text, strlen(text));
 
 				while (clientIDs != NULL) {
 					EnterCriticalSection(&cs);
+
 					ListAddMessageToQueue(clientIDs->id, message, listHead);
 					LeaveCriticalSection(&cs);
 					clientIDs = clientIDs->next;
@@ -177,12 +185,25 @@ DWORD WINAPI ClientThread(LPVOID lpParam) {
 		}
 	}
 	else {
-		//char* numberOfTopics = strtok(NULL, "*");
+		char* numberOfTopics = strtok(NULL, "*");
+		int number = atoi(numberOfTopics);
+
 		char* topics = strtok(NULL, "*");
+		char* topic = strtok(topics, ",");
+		while (topic != NULL)
+		{
+			EnterCriticalSection(&cs);
+			DictionaryAddClient(topic, id, &dictionary);
+			LeaveCriticalSection(&cs);
+
+			topic = strtok(NULL, ",");
+		}
+
+		/*char* topics = strtok(NULL, "*");
 
 		EnterCriticalSection(&cs);
 		DictionaryAddClient(topics, id, &dictionary);
-		LeaveCriticalSection(&cs);
+		LeaveCriticalSection(&cs);*/
 
 		while (true) {
 			// proverava da li ima poruka u redu za ovog klijenta, ako ima, salje
