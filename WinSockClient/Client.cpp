@@ -75,64 +75,124 @@ int __cdecl main(int argc, char **argv)
 	iResult = send(connectSocket, "Publisher*X", (int)strlen("Publisher*X"), 0);
 
 	while (true) {
-		memset(messageToSend, 0, MAX_SIZE);
-		memcpy(messageToSend, "Publisher*", strlen("Publisher*"));
-		printf("Choose the topic:\n");
-		printf("1. Music\n");
-		printf("2. Movies\n");
-		printf("3. Books\n");
+		printf("Select action:\n");
+		printf("1. Test\n");
+		printf("2. Publish messages\n");
+		printf("3. Exit\n");
 		scanf("%d", &choose);
-
-		int pos = strlen("Publisher*");
+		bool stop = false;
 
 		switch (choose)
 		{
 		case 1:
-			memcpy(messageToSend + pos, "Music:", strlen("Music:"));
-			pos = pos + strlen("Music:");
+			printf("Sending messages to random topics. Press 'S' to stop.\n");
+			
+			while (!stop) {
+				if (_kbhit()) {
+					char c = getch();
+					if (c == 's' || c == 'S') {
+						stop = true;
+						break;
+					}
+				}
+				char * message = "Random message for topic";
+				int topic = rand() % 5; // random brojevi 0-4
+				// slati poruku na random temu
+				printf("%s\n", message);
+				Sleep(200);
+			}
 			break;
 		case 2:
-			memcpy(messageToSend + pos, "Movies:", strlen("Movies:"));
-			pos = pos + strlen("Movies:");
+			while (true) {
+				bool ret = false;
+
+				memset(messageToSend, 0, MAX_SIZE);
+				memcpy(messageToSend, "Publisher*", strlen("Publisher*"));
+				printf("Choose the topic:\n");
+				printf("1. Music\n");
+				printf("2. Movies\n");
+				printf("3. Books\n");
+				printf("4. History\n");
+				printf("5. Weather\n");
+				printf("6. Return\n");
+				scanf("%d", &choose);
+
+				int pos = strlen("Publisher*");
+
+				switch (choose)
+				{
+				case 1:
+					memcpy(messageToSend + pos, "Music:", strlen("Music:"));
+					pos = pos + strlen("Music:");
+					break;
+				case 2:
+					memcpy(messageToSend + pos, "Movies:", strlen("Movies:"));
+					pos = pos + strlen("Movies:");
+					break;
+				case 3:
+					memcpy(messageToSend + pos, "Books:", strlen("Books:"));
+					pos = pos + strlen("Books:");
+					break;
+				case 4:
+					memcpy(messageToSend + pos, "History:", strlen("History:"));
+					pos = pos + strlen("History:");
+					break;
+				case 5:
+					memcpy(messageToSend + pos, "Weather:", strlen("Weather:"));
+					pos = pos + strlen("Weather:");
+					break;
+				case 6:
+					break;
+
+				default:
+					break;
+				}
+
+				if (choose > 0 && choose < 6) {
+					printf("Write the message: ");
+					while (message[0] == 0 || message[0] == 10) {
+						fgets(message, MAX_SIZE, stdin);
+					}
+				}
+				else if (choose == 6) {
+					break;
+				}
+				else {
+					printf("Incorrect option");
+					break;
+				}
+
+				memcpy(messageToSend + pos, message, strlen(message));
+				memcpy(messageToSend + pos + strlen(message), " ", 1);
+
+				Select(connectSocket, false);
+				// Send an prepared message with null terminator included
+				iResult = send(connectSocket, messageToSend, (int)strlen(messageToSend) + 1, 0);
+
+				if (iResult == SOCKET_ERROR)
+				{
+					printf("send failed with error: %d\n", WSAGetLastError());
+					closesocket(connectSocket);
+					WSACleanup();
+					return 1;
+				}
+
+				printf("Bytes Sent: %ld\n", iResult);
+				message[0] = 0;
+
+			}
 			break;
 		case 3:
-			memcpy(messageToSend + pos, "Books:", strlen("Books:"));
-			pos = pos + strlen("Books:");
+
 			break;
 
 		default:
 			break;
 		}
 
-		if (choose > 0 && choose < 4) {
-			printf("Write the message: ");
-			while (message[0] == 0 || message[0] == 10) {
-				fgets(message, MAX_SIZE, stdin);
-			}
-		}
-		else {
-			printf("Incorrect option");
-		}
-		
-		memcpy(messageToSend + pos, message, strlen(message));
-		memcpy(messageToSend + pos + strlen(message), " ", 1);
-
-		Select(connectSocket, false);
-		// Send an prepared message with null terminator included
-		iResult = send( connectSocket, messageToSend, (int)strlen(messageToSend) + 1, 0 );
-
-		if (iResult == SOCKET_ERROR)
-		{
-			printf("send failed with error: %d\n", WSAGetLastError());
-			closesocket(connectSocket);
-			WSACleanup();
-			return 1;
-		}
-
-		printf("Bytes Sent: %ld\n", iResult);
-		message[0] = 0;
 
 	}
+	
 
 	getchar();
     // cleanup

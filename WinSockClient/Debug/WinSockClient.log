@@ -2,7 +2,11 @@
   Client.cpp
 d:\faks\iv god\protokoli\projekat\projekatc\winsockclient\client.cpp(55): warning C4996: 'inet_addr': Use inet_pton() or InetPton() instead or define _WINSOCK_DEPRECATED_NO_WARNINGS to disable deprecated API warnings
   c:\program files (x86)\windows kits\10\include\10.0.17134.0\um\winsock2.h(1830): note: see declaration of 'inet_addr'
-d:\faks\iv god\protokoli\projekat\projekatc\winsockclient\client.cpp(84): warning C4996: 'scanf': This function or variable may be unsafe. Consider using scanf_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+d:\faks\iv god\protokoli\projekat\projekatc\winsockclient\client.cpp(82): warning C4996: 'scanf': This function or variable may be unsafe. Consider using scanf_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
   c:\program files (x86)\windows kits\10\include\10.0.17134.0\ucrt\stdio.h(1274): note: see declaration of 'scanf'
-d:\faks\iv god\protokoli\projekat\projekatc\winsockclient\client.cpp(179): warning C4477: 'printf' : format string '%s' requires an argument of type 'char *', but variadic argument 1 has type 'int'
+d:\faks\iv god\protokoli\projekat\projekatc\winsockclient\client.cpp(92): warning C4996: 'getch': The POSIX name for this item is deprecated. Instead, use the ISO C and C++ conformant name: _getch. See online help for details.
+  c:\program files (x86)\windows kits\10\include\10.0.17134.0\ucrt\conio.h(453): note: see declaration of 'getch'
+d:\faks\iv god\protokoli\projekat\projekatc\winsockclient\client.cpp(118): warning C4996: 'scanf': This function or variable may be unsafe. Consider using scanf_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+  c:\program files (x86)\windows kits\10\include\10.0.17134.0\ucrt\stdio.h(1274): note: see declaration of 'scanf'
+d:\faks\iv god\protokoli\projekat\projekatc\winsockclient\client.cpp(239): warning C4477: 'printf' : format string '%s' requires an argument of type 'char *', but variadic argument 1 has type 'int'
   WinSockClient.vcxproj -> D:\faks\IV god\Protokoli\Projekat\ProjekatC\Debug\ClientPublish.exe
