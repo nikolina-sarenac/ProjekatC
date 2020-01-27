@@ -13,7 +13,7 @@
 
 #define DEFAULT_BUFLEN 512
 #define DEFAULT_PORT "27016"
-#define MAX_SIZE 100
+#define MAX_SIZE 200
 
 #define SAFE_DELETE_HANDLE(a) if(a){CloseHandle(a);} 
 
@@ -21,7 +21,7 @@ int sizeOfMessage = 0;
 
 
 bool InitializeWindowsSockets();
-
+int Receive(SOCKET acceptedSocket, char* recvbuf, int size, HANDLE sem);
 
 CRITICAL_SECTION cs;
 
@@ -77,22 +77,25 @@ DWORD WINAPI ClientThread(LPVOID lpParam) {
 
 	if (strcmp(split, "Publisher") == 0) {
 		while (WaitForSingleObject(semaphore, 0L) != WAIT_OBJECT_0) {
-			memset(buffer, 0, strlen(buffer));
+			//memset(buffer, 0, strlen(buffer));
 			// Receive data until the client shuts down the connection
 			iResult = Select(acceptedSocket, true, semaphore);
 			if (iResult == 1)
 				return 0;
-			iResult = recv(acceptedSocket, buffer, DEFAULT_BUFLEN, 0);
+			char recvBuffer[MAX_SIZE];
+			memset(recvBuffer, 0, MAX_SIZE);
+			//iResult = recv(acceptedSocket, recvBuffer, DEFAULT_BUFLEN, 0);
+			iResult = Receive(acceptedSocket, recvBuffer, MAX_SIZE, semaphore);
 			if (iResult > 0)
 			{
-				//printf("Message received from client %d: %s.\n", id, buffer);
+				printf("Message received from client %d: %s.\n", id, recvBuffer);
 				// ovaj dio poruke je Publisher
-				char *split = strtok(buffer, "*");
+				char *split = strtok(recvBuffer, "*");
 				// dobicemo topic
 				char* topic = strtok(NULL, ":");
-				////printf("Topic: %s\n", topic);
+				// printf("Topic: %s\n", topic);
 				char* text = strtok(NULL, "|");
-				////printf("Message: %s\n", message);
+				// printf("Message: %s\n", message);
 
 				EnterCriticalSection(&cs);
 				ListID* clientIDs = DictionaryGetClients(topic, dictionary);
@@ -114,29 +117,19 @@ DWORD WINAPI ClientThread(LPVOID lpParam) {
 			}
 			else if (iResult == 0)
 			{
-				// connection was closed gracefully
-				//printf("Connection with client closed.\n");
 				closesocket(acceptedSocket);
-				/*HANDLE h = ListHandleAt(id, listHead);
-				if (h != NULL)
-					CloseHandle(h);*/
 				ListRemoveAt(id, &listHead);
 				return 0;
 			}
 			else
 			{
-				// there was an error during recv
-				//printf("recv failed with error: %d\n", WSAGetLastError());
 				closesocket(acceptedSocket);
-				/*HANDLE h = ListHandleAt(id, listHead);
-				if (h != NULL)
-					CloseHandle(h);*/
 				ListRemoveAt(id, &listHead);
 				return 0;
 			}
 		}
 	}
-	else {
+	else if (strcmp(split, "Subscriber") == 0) {
 		char* numberOfTopics = strtok(NULL, "*");
 		int number = atoi(numberOfTopics);
 
@@ -155,20 +148,20 @@ DWORD WINAPI ClientThread(LPVOID lpParam) {
 		while (WaitForSingleObject(semaphore, 0L) != WAIT_OBJECT_0) {
 			// proverava da li ima poruka u redu za ovog klijenta, ako ima, salje
 
-			char *message = (char*)malloc(520);
+			char *message = (char*)malloc(MAX_SIZE);
 
 			EnterCriticalSection(&cs);
 			int ret = PopFromQueue2(&listHead, message, id);
 			LeaveCriticalSection(&cs);
 
 			if (ret > 0) {
-				EnterCriticalSection(&cs);
+				/*EnterCriticalSection(&cs);
 				SOCKET s = ListElementAt(id, listHead);
-				LeaveCriticalSection(&cs);
-				iResult = Select(s, false, semaphore);
+				LeaveCriticalSection(&cs);*/
+				iResult = Select(acceptedSocket, false, semaphore);
 				if (iResult == 1)
 					return 0;
-				iResult = send(s, message, int(strlen(message)), 0);
+				iResult = send(acceptedSocket, message, MAX_SIZE, 0);
 
 				if (iResult == SOCKET_ERROR)
 				{
@@ -179,9 +172,8 @@ DWORD WINAPI ClientThread(LPVOID lpParam) {
 					return 0;
 				}
 			}
-
+			Sleep(20);
 			free(message);
-			Sleep(200);
 		}
 	}
 
@@ -344,6 +336,23 @@ bool InitializeWindowsSockets()
     }
 	return true;
 }
+
+int Receive(SOCKET acceptedSocket, char* recvbuf, int size, HANDLE sem)
+{
+	int brojac = 0;
+
+	while (brojac < size) {
+		Select(acceptedSocket, true, sem);
+		int res = recv(acceptedSocket, recvbuf + brojac, size - brojac, 0);
+		if (res > 0)
+			brojac += res;
+		else {
+			break;
+		}
+	}
+	return brojac;
+}
+
 
 
 

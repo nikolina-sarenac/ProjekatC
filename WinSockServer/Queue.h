@@ -1,5 +1,5 @@
 #pragma once
-#define MAX_SIZE 520
+#define MAX_SIZE 200
 
 typedef struct queue {
 	char value[MAX_SIZE];
@@ -55,7 +55,7 @@ int PopFromQueue(queue** head, char *message) {
 	queue* next_node = NULL;
 	next_node = (*head)->next;
 	//char* retVal = (char*)malloc(strlen((*head)->value) + 1);
-	memset(message, 0, 520);
+	memset(message, 0, MAX_SIZE);
 	memcpy(message, (*head)->value, strlen((*head)->value));
 	free(*head);
 	*head = next_node;
@@ -76,7 +76,7 @@ int PopFromQueue2(List** head, char *message, int id) {
 			queue* q = NULL;
 			q = temp->clientMessages;
 			temp->clientMessages = temp->clientMessages->next;
-			memset(message, 0, 520);
+			memset(message, 0, MAX_SIZE);
 			memcpy(message, q->value, strlen(q->value));
 			free(q);
 			return strlen(message);

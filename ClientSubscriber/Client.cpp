@@ -11,11 +11,12 @@
 
 #define DEFAULT_BUFLEN 512
 #define DEFAULT_PORT 27016
-#define MAX_SIZE 100
+#define MAX_SIZE 200
 // Initializes WinSock2 library
 // Returns true if succeeded, false otherwise.
 bool InitializeWindowsSockets();
 void Select(SOCKET socket, bool read);
+int Receive(SOCKET acceptedSocket, char* recvbuf, int size);
 
 int __cdecl main(int argc, char **argv)
 {
@@ -26,8 +27,8 @@ int __cdecl main(int argc, char **argv)
 	// message to send
 	char messageToSend[MAX_SIZE];
 	char topics[MAX_SIZE];
-	char buffer[DEFAULT_BUFLEN];
-	memset(buffer, 0, DEFAULT_BUFLEN);
+	char buffer[MAX_SIZE];
+	memset(buffer, 0, MAX_SIZE);
 	int choose = 0;
 	// Validate the parameters
 
@@ -77,7 +78,7 @@ int __cdecl main(int argc, char **argv)
 
 	int choice = 0;
 	int position = 0;
-	int topicsChosen[3] = {0, 0, 0};
+	int topicsChosen[5] = {0, 0, 0, 0, 0};
 	int numberOfTopics = 0;
 	do {
 		bool error = false;
@@ -89,7 +90,11 @@ int __cdecl main(int argc, char **argv)
 			printf("2. Movies\n");
 		if (topicsChosen[2] == 0)
 			printf("3. Books\n");
-		printf("4. Done\n");
+		if (topicsChosen[3] == 0)
+			printf("4. History\n");
+		if (topicsChosen[4] == 0)
+			printf("5. Weather\n");
+		printf("6. Done\n");
 
 		scanf("%d", &choose);
 
@@ -135,6 +140,32 @@ int __cdecl main(int argc, char **argv)
 				break;
 			}
 		case 4:
+			if (topicsChosen[3] == 0) {
+				memcpy(topics + position, "History,", 8);
+				position += 8;
+				numberOfTopics += 1;
+				topicsChosen[3] = 1;
+				break;
+			}
+			else {
+				printf("Unavailable option\n");
+				error = true;
+				break;
+			}
+		case 5:
+			if (topicsChosen[4] == 0) {
+				memcpy(topics + position, "Weather,", 8);
+				position += 8;
+				numberOfTopics += 1;
+				topicsChosen[4] = 1;
+				break;
+			}
+			else {
+				printf("Unavailable option\n");
+				error = true;
+				break;
+			}
+		case 6:
 			if (numberOfTopics == 0) {
 				printf("Please select at least one topic.\n\n");
 				error = true;
@@ -149,7 +180,7 @@ int __cdecl main(int argc, char **argv)
 		if (!error) {
 			printf("Topics selected: %s\n\n", topics);
 		}
-	} while (choose != 4 || numberOfTopics == 0);
+	} while (choose != 6 || numberOfTopics == 0);
 
 	position = strlen("Subscriber*");
 	if (numberOfTopics == 1) {
@@ -207,7 +238,8 @@ int __cdecl main(int argc, char **argv)
 
 	while (true) {
 		Select(connectSocket, true);
-		iResult = recv(connectSocket, buffer, DEFAULT_BUFLEN, 0);
+		//iResult = recv(connectSocket, buffer, DEFAULT_BUFLEN, 0);
+		iResult = Receive(connectSocket, buffer, MAX_SIZE);
 		if (iResult > 0)
 		{
 			printf("Message received from server: %s\n", buffer);
@@ -281,4 +313,20 @@ void Select(SOCKET socket, bool read) {
 		return;
 	}
 
+}
+
+int Receive(SOCKET acceptedSocket, char* recvbuf, int size)
+{
+	int brojac = 0;
+
+	while (brojac < size) {
+		Select(acceptedSocket, true);
+		int res = recv(acceptedSocket, recvbuf + brojac, size - brojac, 0);
+		if (res > 0)
+			brojac += res;
+		else {
+			break;
+		}
+	}
+	return brojac;
 }

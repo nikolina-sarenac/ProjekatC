@@ -10,12 +10,13 @@
 
 #define DEFAULT_BUFLEN 512
 #define DEFAULT_PORT 27016
-#define MAX_SIZE 100
+#define MAX_SIZE 200
 
 // Initializes WinSock2 library
 // Returns true if succeeded, false otherwise.
 bool InitializeWindowsSockets();
 void Select(SOCKET socket, bool read);
+int Send(SOCKET connectSocket, char* messageToSend, int len);
 
 int __cdecl main(int argc, char **argv) 
 {
@@ -96,7 +97,58 @@ int __cdecl main(int argc, char **argv)
 					}
 				}
 				char * message = "Random message for topic";
-				int topic = rand() % 5; // random brojevi 0-4
+
+				for (int i = 0; i < 500; i++) {
+					int topic = rand() % 5; // random brojevi 0-4
+
+					memset(messageToSend, 0, MAX_SIZE);
+
+					memcpy(messageToSend, "Publisher*", strlen("Publisher*"));
+					int pos = strlen("Publisher*");
+
+					switch (topic) {
+					case 0:
+						memcpy(messageToSend + pos, "Music:", strlen("Music:"));
+						pos = pos + strlen("Music:");
+						break;
+					case 1:
+						memcpy(messageToSend + pos, "Movies:", strlen("Movies:"));
+						pos = pos + strlen("Movies:");
+						break;
+					case 2:
+						memcpy(messageToSend + pos, "Books:", strlen("Books:"));
+						pos = pos + strlen("Books:");
+						break;
+					case 3:
+						memcpy(messageToSend + pos, "History:", strlen("History:"));
+						pos = pos + strlen("History:");
+						break;
+					case 4:
+						memcpy(messageToSend + pos, "Weather:", strlen("Weather:"));
+						pos = pos + strlen("Weather:");
+						break;
+					default:
+						break;
+					}
+
+					memcpy(messageToSend + pos, message, strlen(message));
+
+					Select(connectSocket, false);
+					// Send an prepared message with null terminator included
+					printf("%s\n", messageToSend);
+					//iResult = send(connectSocket, messageToSend, (int)strlen(messageToSend) + 1, 0);
+					iResult = Send(connectSocket, messageToSend, MAX_SIZE);
+					if (iResult == SOCKET_ERROR)
+					{
+						printf("send failed with error: %d\n", WSAGetLastError());
+						closesocket(connectSocket);
+						WSACleanup();
+						return 1;
+					}
+					//Sleep(1000);
+				}
+				
+
 				// slati poruku na random temu
 				printf("%s\n", message);
 				Sleep(200);
@@ -246,4 +298,18 @@ void Select(SOCKET socket, bool read) {
 		return;
 	}
 
+}
+
+int Send(SOCKET connectSocket, char* messageToSend, int len)
+{
+	int brojac = 0;
+
+	while (brojac < len) {
+		Select(connectSocket, false);
+		int res = send(connectSocket, messageToSend + brojac, len - brojac, 0);
+		if (res > 0) {
+			brojac += res;
+		}
+	}
+	return brojac;
 }

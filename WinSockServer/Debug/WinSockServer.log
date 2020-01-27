@@ -1,23 +1,21 @@
 ﻿C:\Program Files (x86)\Microsoft Visual Studio\2017\Professional\Common7\IDE\VC\VCTargets\Microsoft.CppBuild.targets(391,5): warning MSB8028: The intermediate directory (Debug\) contains files shared from another project (WinSockServer.vcxproj).  This can lead to incorrect clean and rebuild behavior.
   Server.cpp
-d:\faks\iv god\protokoli\projekat\projekatc\winsockserver\server.cpp(16): warning C4005: 'MAX_SIZE': macro redefinition
-  d:\faks\iv god\protokoli\projekat\projekatc\winsockserver\queue.h(2): note: see previous definition of 'MAX_SIZE'
 d:\faks\iv god\protokoli\projekat\projekatc\winsockserver\server.cpp(56): warning C4996: 'strtok': This function or variable may be unsafe. Consider using strtok_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
   c:\program files (x86)\windows kits\10\include\10.0.17134.0\ucrt\string.h(440): note: see declaration of 'strtok'
-d:\faks\iv god\protokoli\projekat\projekatc\winsockserver\server.cpp(90): warning C4996: 'strtok': This function or variable may be unsafe. Consider using strtok_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+d:\faks\iv god\protokoli\projekat\projekatc\winsockserver\server.cpp(93): warning C4996: 'strtok': This function or variable may be unsafe. Consider using strtok_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
   c:\program files (x86)\windows kits\10\include\10.0.17134.0\ucrt\string.h(440): note: see declaration of 'strtok'
-d:\faks\iv god\protokoli\projekat\projekatc\winsockserver\server.cpp(92): warning C4996: 'strtok': This function or variable may be unsafe. Consider using strtok_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+d:\faks\iv god\protokoli\projekat\projekatc\winsockserver\server.cpp(95): warning C4996: 'strtok': This function or variable may be unsafe. Consider using strtok_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
   c:\program files (x86)\windows kits\10\include\10.0.17134.0\ucrt\string.h(440): note: see declaration of 'strtok'
-d:\faks\iv god\protokoli\projekat\projekatc\winsockserver\server.cpp(94): warning C4996: 'strtok': This function or variable may be unsafe. Consider using strtok_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+d:\faks\iv god\protokoli\projekat\projekatc\winsockserver\server.cpp(97): warning C4996: 'strtok': This function or variable may be unsafe. Consider using strtok_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
   c:\program files (x86)\windows kits\10\include\10.0.17134.0\ucrt\string.h(440): note: see declaration of 'strtok'
-d:\faks\iv god\protokoli\projekat\projekatc\winsockserver\server.cpp(140): warning C4996: 'strtok': This function or variable may be unsafe. Consider using strtok_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+d:\faks\iv god\protokoli\projekat\projekatc\winsockserver\server.cpp(133): warning C4996: 'strtok': This function or variable may be unsafe. Consider using strtok_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
   c:\program files (x86)\windows kits\10\include\10.0.17134.0\ucrt\string.h(440): note: see declaration of 'strtok'
-d:\faks\iv god\protokoli\projekat\projekatc\winsockserver\server.cpp(143): warning C4996: 'strtok': This function or variable may be unsafe. Consider using strtok_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+d:\faks\iv god\protokoli\projekat\projekatc\winsockserver\server.cpp(136): warning C4996: 'strtok': This function or variable may be unsafe. Consider using strtok_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+  c:\program files (x86)\windows kits\10\include\10.0.17134.0\ucrt\string.h(440): note: see declaration of 'strtok'
+d:\faks\iv god\protokoli\projekat\projekatc\winsockserver\server.cpp(137): warning C4996: 'strtok': This function or variable may be unsafe. Consider using strtok_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
   c:\program files (x86)\windows kits\10\include\10.0.17134.0\ucrt\string.h(440): note: see declaration of 'strtok'
 d:\faks\iv god\protokoli\projekat\projekatc\winsockserver\server.cpp(144): warning C4996: 'strtok': This function or variable may be unsafe. Consider using strtok_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
   c:\program files (x86)\windows kits\10\include\10.0.17134.0\ucrt\string.h(440): note: see declaration of 'strtok'
-d:\faks\iv god\protokoli\projekat\projekatc\winsockserver\server.cpp(151): warning C4996: 'strtok': This function or variable may be unsafe. Consider using strtok_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
-  c:\program files (x86)\windows kits\10\include\10.0.17134.0\ucrt\string.h(440): note: see declaration of 'strtok'
-d:\faks\iv god\protokoli\projekat\projekatc\winsockserver\server.cpp(202): warning C4101: 'recvbuf': unreferenced local variable
-d:\faks\iv god\protokoli\projekat\projekatc\winsockserver\server.cpp(307): warning C4101: 'hThread': unreferenced local variable
+d:\faks\iv god\protokoli\projekat\projekatc\winsockserver\server.cpp(194): warning C4101: 'recvbuf': unreferenced local variable
+d:\faks\iv god\protokoli\projekat\projekatc\winsockserver\server.cpp(299): warning C4101: 'hThread': unreferenced local variable
   WinSockServer.vcxproj -> D:\faks\IV god\Protokoli\Projekat\ProjekatC\Debug\PubSubServer.exe
