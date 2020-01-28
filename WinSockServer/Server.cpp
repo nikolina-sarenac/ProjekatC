@@ -10,6 +10,7 @@
 #include <Queue.h>
 #include <ListAndQueue.h>
 #include <Helper.h>
+#include <ClientFunctions.h>
 
 #define DEFAULT_BUFLEN 512
 #define DEFAULT_PORT "27016"
@@ -17,14 +18,9 @@
 
 #define SAFE_DELETE_HANDLE(a) if(a){CloseHandle(a);} 
 
-int sizeOfMessage = 0;
-
-
 bool InitializeWindowsSockets();
-int Receive(SOCKET acceptedSocket, char* recvbuf, int size, HANDLE sem);
 
 CRITICAL_SECTION cs;
-
 List* listHead;
 Dictionary* dictionary;
 
@@ -32,32 +28,27 @@ DWORD WINAPI ClientThread(LPVOID lpParam) {
 	int id = *((int*)lpParam);
 	free(lpParam);   // oslobodimo pokazivac
 
-	char buffer[DEFAULT_BUFLEN];
-	int iResult = 0;
+	char buffer[DEFAULT_BUFLEN];     // bafer za poruke koje pristizu
+	memset(buffer, 0, DEFAULT_BUFLEN);
 
 	EnterCriticalSection(&cs);
 	SOCKET acceptedSocket = ListElementAt(id, listHead);
 	HANDLE semaphore = ListSemaphoreAt(id, listHead);
 	LeaveCriticalSection(&cs);
 
-	//primi prvu poruku i vidi koji je tip klijenta
-	memset(buffer, 0, DEFAULT_BUFLEN);
-	char *split;
-
-
-	// Receive data 
-	iResult = Select(acceptedSocket, true, semaphore);
+	char *clientType;
+	int iResult = Select(acceptedSocket, true, semaphore);
 	if (iResult == 1)
 		return 0;
 	iResult = recv(acceptedSocket, buffer, DEFAULT_BUFLEN, 0);
 	if (iResult > 0)
 	{
-		////printf("Message received from client %d: %s.\n", id, buffer);
-		split = strtok(buffer, "*");
+		//printf("Message received from client %d: %s.\n", id, buffer);
+		clientType = strtok(buffer, "*");
 	}
 	else if (iResult == 0)
 	{
-		////printf("Connection with client closed.\n");
+		printf("Connection with client %d closed.\n", id);
 		closesocket(acceptedSocket);
 		EnterCriticalSection(&cs);
 		ListRemoveAt(id, &listHead);
@@ -67,7 +58,7 @@ DWORD WINAPI ClientThread(LPVOID lpParam) {
 	else
 	{
 		// there was an error during recv
-		//printf("recv failed with error: %d\n", WSAGetLastError());
+		printf("recv failed with error: %d\n", WSAGetLastError());
 		closesocket(acceptedSocket);
 		EnterCriticalSection(&cs);
 		ListRemoveAt(id, &listHead);
@@ -75,109 +66,13 @@ DWORD WINAPI ClientThread(LPVOID lpParam) {
 		return 0;
 	}
 
-	if (strcmp(split, "Publisher") == 0) {
-		while (WaitForSingleObject(semaphore, 0L) != WAIT_OBJECT_0) {
-			//memset(buffer, 0, strlen(buffer));
-			// Receive data until the client shuts down the connection
-			iResult = Select(acceptedSocket, true, semaphore);
-			if (iResult == 1)
-				return 0;
-			char recvBuffer[MAX_SIZE];
-			memset(recvBuffer, 0, MAX_SIZE);
-			//iResult = recv(acceptedSocket, recvBuffer, DEFAULT_BUFLEN, 0);
-			iResult = Receive(acceptedSocket, recvBuffer, MAX_SIZE, semaphore);
-			if (iResult > 0)
-			{
-				printf("Message received from client %d: %s.\n", id, recvBuffer);
-				// ovaj dio poruke je Publisher
-				char *split = strtok(recvBuffer, "*");
-				// dobicemo topic
-				char* topic = strtok(NULL, ":");
-				// printf("Topic: %s\n", topic);
-				char* text = strtok(NULL, "|");
-				// printf("Message: %s\n", message);
-
-				EnterCriticalSection(&cs);
-				ListID* clientIDs = DictionaryGetClients(topic, dictionary);
-				LeaveCriticalSection(&cs);
-
-				char message[MAX_SIZE];
-				memset(message, 0, MAX_SIZE);
-				memcpy(message, topic, strlen(topic));
-				memcpy(message + strlen(topic), ":", 1);
-				memcpy(message + strlen(topic) + 1, text, strlen(text));
-
-				while (clientIDs != NULL) {
-					EnterCriticalSection(&cs);
-					ListAddMessageToQueue(clientIDs->id, message, listHead);
-					LeaveCriticalSection(&cs);
-
-					clientIDs = clientIDs->next;
-				}
-			}
-			else if (iResult == 0)
-			{
-				closesocket(acceptedSocket);
-				ListRemoveAt(id, &listHead);
-				return 0;
-			}
-			else
-			{
-				closesocket(acceptedSocket);
-				ListRemoveAt(id, &listHead);
-				return 0;
-			}
-		}
+	if (strcmp(clientType, "Publisher") == 0) {
+		PublisherFunction(id, acceptedSocket, semaphore);
 	}
-	else if (strcmp(split, "Subscriber") == 0) {
-		char* numberOfTopics = strtok(NULL, "*");
-		int number = atoi(numberOfTopics);
-
-		char* topics = strtok(NULL, "*");
-		char* topic = strtok(topics, ",");
-		while (topic != NULL)
-		{
-			EnterCriticalSection(&cs);
-			DictionaryAddClient(topic, id, &dictionary);
-			LeaveCriticalSection(&cs);
-
-			topic = strtok(NULL, ",");
-		}
-
-
-		while (WaitForSingleObject(semaphore, 0L) != WAIT_OBJECT_0) {
-			// proverava da li ima poruka u redu za ovog klijenta, ako ima, salje
-
-			char *message = (char*)malloc(MAX_SIZE);
-
-			EnterCriticalSection(&cs);
-			int ret = PopFromQueue2(&listHead, message, id);
-			LeaveCriticalSection(&cs);
-
-			if (ret > 0) {
-				/*EnterCriticalSection(&cs);
-				SOCKET s = ListElementAt(id, listHead);
-				LeaveCriticalSection(&cs);*/
-				iResult = Select(acceptedSocket, false, semaphore);
-				if (iResult == 1)
-					return 0;
-				iResult = send(acceptedSocket, message, MAX_SIZE, 0);
-
-				if (iResult == SOCKET_ERROR)
-				{
-					//printf("send failed with error: %d\n", WSAGetLastError());
-					closesocket(acceptedSocket);
-					DictionaryRemoveClient(id, &dictionary);
-					ListRemoveAt(id, &listHead);
-					return 0;
-				}
-			}
-			Sleep(20);
-			free(message);
-		}
+	else if (strcmp(clientType, "Subscriber") == 0) {
+		SubscriberFunction(id, acceptedSocket, semaphore);
 	}
 
-	
 	memset(buffer, 0, strlen(buffer));
 	return 0;
 }
@@ -197,9 +92,6 @@ int  main(void)
 	dictionary = NULL;
 	listHead = NULL;
 	InitializeDictionary(&dictionary);
-
-	//inicijalizacija head cvora u redu
-	
 
     if(InitializeWindowsSockets() == false)
     {
@@ -222,7 +114,7 @@ int  main(void)
     iResult = getaddrinfo(NULL, DEFAULT_PORT, &hints, &resultingAddress);
     if ( iResult != 0 )
     {
-        //printf("getaddrinfo failed with error: %d\n", iResult);
+        printf("getaddrinfo failed with error: %d\n", iResult);
         WSACleanup();
         return 1;
     }
@@ -234,7 +126,7 @@ int  main(void)
 
     if (listenSocket == INVALID_SOCKET)
     {
-        //printf("socket failed with error: %ld\n", WSAGetLastError());
+        printf("socket failed with error: %ld\n", WSAGetLastError());
         freeaddrinfo(resultingAddress);
         WSACleanup();
         return 1;
@@ -245,7 +137,7 @@ int  main(void)
     iResult = bind( listenSocket, resultingAddress->ai_addr, (int)resultingAddress->ai_addrlen);
     if (iResult == SOCKET_ERROR)
     {
-        //printf("bind failed with error: %d\n", WSAGetLastError());
+        printf("bind failed with error: %d\n", WSAGetLastError());
         freeaddrinfo(resultingAddress);
         closesocket(listenSocket);
         WSACleanup();
@@ -259,7 +151,7 @@ int  main(void)
     iResult = listen(listenSocket, SOMAXCONN);
     if (iResult == SOCKET_ERROR)
     {
-        //printf("listen failed with error: %d\n", WSAGetLastError());
+        printf("listen failed with error: %d\n", WSAGetLastError());
         closesocket(listenSocket);
         WSACleanup();
         return 1;
@@ -267,13 +159,13 @@ int  main(void)
 
 	unsigned long mode = 1;
 	if (ioctlsocket(listenSocket, FIONBIO, &mode) == SOCKET_ERROR) {
-		//printf("ioctl failed with error: %d\n", WSAGetLastError());
+		printf("ioctl failed with error: %d\n", WSAGetLastError());
 		closesocket(listenSocket);
 		WSACleanup();
 		return 1;
 	}
 
-	//printf("Server initialized, waiting for clients.\n");
+	printf("Server initialized, waiting for clients.\n");
 	InitializeCriticalSection(&cs);
 
     do
@@ -288,7 +180,7 @@ int  main(void)
 
 			if (acceptedSocket == INVALID_SOCKET)
 			{
-				//printf("accept failed with error: %d\n", WSAGetLastError());
+				printf("accept failed with error: %d\n", WSAGetLastError());
 				closesocket(listenSocket);
 				WSACleanup();
 				return 1;
@@ -299,15 +191,17 @@ int  main(void)
 			HANDLE hThread;
 			int *param = (int*)malloc(sizeof(int));
 			*param = id;
-			//hThread = CreateThread(NULL, 0, &ClientThread, param, 0, &dw);
-			ModifyListAt(id, dw, CreateThread(NULL, 0, &ClientThread, param, 0, &dw), listHead);
+			hThread = CreateThread(NULL, 0, &ClientThread, param, 0, &dw);
+			ModifyListAt(id, dw, hThread, listHead);
 			id++;
 		}
         
 
     } while (1);
-	printf("Server is sending finish signals for all threads");
+
+	//printf("Server is sending finish signals for all threads");
 	SendFinishSignal(listHead);
+
 	List* temp = listHead;
 	while (temp != NULL) {
 		WaitForSingleObject(temp->clienth, INFINITE);
@@ -331,27 +225,112 @@ bool InitializeWindowsSockets()
 	// Initialize windows sockets library for this process
     if (WSAStartup(MAKEWORD(2,2), &wsaData) != 0)
     {
-        //printf("WSAStartup failed with error: %d\n", WSAGetLastError());
+        printf("WSAStartup failed with error: %d\n", WSAGetLastError());
         return false;
     }
 	return true;
 }
 
-int Receive(SOCKET acceptedSocket, char* recvbuf, int size, HANDLE sem)
+int PublisherFunction(int id, SOCKET acceptedSocket, HANDLE semaphore)
 {
-	int brojac = 0;
+	while (WaitForSingleObject(semaphore, 0L) != WAIT_OBJECT_0) {
+		char recvBuffer[MAX_SIZE];
+		memset(recvBuffer, 0, MAX_SIZE);
 
-	while (brojac < size) {
-		Select(acceptedSocket, true, sem);
-		int res = recv(acceptedSocket, recvbuf + brojac, size - brojac, 0);
-		if (res > 0)
-			brojac += res;
-		else {
-			break;
+		int iResult = Receive(acceptedSocket, recvBuffer, MAX_SIZE, semaphore);
+		if (iResult > 0)
+		{
+			//printf("Message received from client %d: %s.\n", id, recvBuffer);
+			// ovaj dio poruke je Publisher
+			char *split = strtok(recvBuffer, "*");
+			// dobicemo topic
+			char* topic = strtok(NULL, ":");
+			// printf("Topic: %s\n", topic);
+			char* text = strtok(NULL, "|");
+			// printf("Message: %s\n", message);
+
+			EnterCriticalSection(&cs);
+			ListID* clientIDs = DictionaryGetClients(topic, dictionary);
+			LeaveCriticalSection(&cs);
+
+			char message[MAX_SIZE];
+			memset(message, 0, MAX_SIZE);
+			memcpy(message, topic, strlen(topic));
+			memcpy(message + strlen(topic), ":", 1);
+			memcpy(message + strlen(topic) + 1, text, strlen(text));
+
+			while (clientIDs != NULL) {
+				EnterCriticalSection(&cs);
+				ListAddMessageToQueue(clientIDs->id, message, listHead);
+				LeaveCriticalSection(&cs);
+
+				clientIDs = clientIDs->next;
+			}
+		}
+		else if (iResult == 0)
+		{
+			closesocket(acceptedSocket);
+			ListRemoveAt(id, &listHead);
+			return 0;
+		}
+		else if (iResult == -1)
+			return 0;
+		else
+		{
+			closesocket(acceptedSocket);
+			ListRemoveAt(id, &listHead);
+			return 0;
 		}
 	}
-	return brojac;
 }
+
+int SubscriberFunction(int id, SOCKET acceptedSocket, HANDLE semaphore)
+{
+	char* numberOfTopics = strtok(NULL, "*");
+	int number = atoi(numberOfTopics);
+
+	char* topics = strtok(NULL, "*");
+	char* topic = strtok(topics, ",");
+	while (topic != NULL)
+	{
+		EnterCriticalSection(&cs);
+		DictionaryAddClient(topic, id, &dictionary);
+		LeaveCriticalSection(&cs);
+
+		topic = strtok(NULL, ",");
+	}
+
+
+	while (WaitForSingleObject(semaphore, 0L) != WAIT_OBJECT_0) {
+		// proverava da li ima poruka u redu za ovog klijenta, ako ima, salje
+		char *message = (char*)malloc(MAX_SIZE);
+
+		EnterCriticalSection(&cs);
+		int ret = PopFromQueue2(&listHead, message, id);
+		LeaveCriticalSection(&cs);
+
+		if (ret > 0) {
+			int iResult = Send(acceptedSocket, message, MAX_SIZE, semaphore);
+
+			if (iResult == -1) {   // dobijen signal na semaforu
+				free(message);
+				return 0;
+			}
+			else if (iResult == SOCKET_ERROR)
+			{
+				printf("send failed with error: %d\n", WSAGetLastError());
+				closesocket(acceptedSocket);
+				DictionaryRemoveClient(id, &dictionary);
+				ListRemoveAt(id, &listHead);
+				return 0;
+			}
+		}
+		//Sleep(50);
+		free(message);
+	}
+}
+
+
 
 
 

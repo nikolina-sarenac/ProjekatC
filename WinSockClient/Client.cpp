@@ -99,6 +99,13 @@ int __cdecl main(int argc, char **argv)
 				char * message = "Random message for topic";
 
 				for (int i = 0; i < 500; i++) {
+					if (_kbhit()) {
+						char c = getch();
+						if (c == 's' || c == 'S') {
+							stop = true;
+							break;
+						}
+					}
 					int topic = rand() % 5; // random brojevi 0-4
 
 					memset(messageToSend, 0, MAX_SIZE);
@@ -219,7 +226,7 @@ int __cdecl main(int argc, char **argv)
 
 				Select(connectSocket, false);
 				// Send an prepared message with null terminator included
-				iResult = send(connectSocket, messageToSend, (int)strlen(messageToSend) + 1, 0);
+				iResult = Send(connectSocket, messageToSend, MAX_SIZE);
 
 				if (iResult == SOCKET_ERROR)
 				{

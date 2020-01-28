@@ -8,7 +8,7 @@ queue* ListQueueAt(int index, List *head) {
 	if (head != NULL) {
 		List *temp = head;
 
-		while (temp->num != index) {
+		while (temp->id != index) {
 			temp = temp->next;
 		}
 		return temp->clientMessages;
@@ -47,7 +47,7 @@ void ListRemoveAt(int index, List **head)
 {
 	List *temp = *head;
 	List *pom = NULL;
-	while (temp->num != index) {
+	while (temp->id != index) {
 		pom = temp;
 		temp = temp->next;
 	}
@@ -77,7 +77,7 @@ void ListAddMessageToQueue(int id, char * message, list * head)
 	if (head != NULL) {
 		List *temp = head;
 
-		while (temp->num != id) {
+		while (temp->id != id) {
 			temp = temp->next;
 		}
 		PushInQueue(&(temp->clientMessages), message);

@@ -2,7 +2,7 @@
 #define SAFE_DELETE_HANDLE(a) if(a){CloseHandle(a);} 
 typedef struct list
 {
-	int num;
+	int id;
 	SOCKET s;
 	DWORD threadID;
 	HANDLE clienth;
@@ -11,9 +11,9 @@ typedef struct list
 	struct queue *clientMessages;
 }List;
 
-void ListAdd(int number, SOCKET s, DWORD id, HANDLE h, HANDLE sem, List **head);
+void ListAdd(int idber, SOCKET s, DWORD id, HANDLE h, HANDLE sem, List **head);
 int ListCount(List* head);
-void ListInsert(int index, int number, SOCKET s, DWORD id, HANDLE h, List **head);
+void ListInsert(int index, int idber, SOCKET s, DWORD id, HANDLE h, List **head);
 SOCKET ListElementAt(int index, List *head);
 HANDLE ListHandleAt(int index, List *head);
 HANDLE ListSemaphoreAt(int index, List *head);
@@ -22,13 +22,13 @@ void ModifyListAt(int index, DWORD id, HANDLE handle, list *head);
 
 
 
-void ListAdd(int number, SOCKET s, DWORD id, HANDLE h, HANDLE sem, List **head)
+void ListAdd(int id, SOCKET s, DWORD threadId, HANDLE h, HANDLE sem, List **head)
 {
 	List* el;
 	el = (List*)malloc(sizeof(List));
-	el->num = number;
+	el->id = id;
 	el->s = s;
-	el->threadID = id;
+	el->threadID = threadId;
 	el->semaphore = sem;
 	el->clienth = h;
 	el->clientMessages = NULL;
@@ -56,10 +56,10 @@ int ListCount(List* head)
 	return ret;
 }
 
-void ListInsert(int index, int number, SOCKET s, DWORD id, HANDLE h, List **head)
+void ListInsert(int index, int idber, SOCKET s, DWORD id, HANDLE h, List **head)
 {
 	List* novi = (List*)malloc(sizeof(List));
-	novi->num = number;
+	novi->id = idber;
 	novi->s = s;
 	novi->threadID = id;
 	novi->clienth = h;
@@ -87,7 +87,7 @@ SOCKET ListElementAt(int index, List *head)
 	if (head != NULL) {
 		List *temp = head;
 
-		while (temp->num != index) {
+		while (temp->id != index) {
 			temp = temp->next;
 		}
 		return temp->s;
@@ -99,7 +99,7 @@ HANDLE ListHandleAt(int index, List *head) {
 	if (head != NULL) {
 		List *temp = head;
 
-		while (temp->num != index) {
+		while (temp->id != index) {
 			temp = temp->next;
 		}
 		return temp->clienth;
@@ -111,7 +111,7 @@ HANDLE ListSemaphoreAt(int index, List *head) {
 	if (head != NULL) {
 		List *temp = head;
 
-		while (temp->num != index) {
+		while (temp->id != index) {
 			temp = temp->next;
 		}
 		return temp->semaphore;
@@ -123,7 +123,7 @@ void ModifyListAt(int index, DWORD id, HANDLE handle, list *head) {
 	if (head != NULL) {
 		List *temp = head;
 
-		while (temp->num != index) {
+		while (temp->id != index) {
 			temp = temp->next;
 		}
 		temp->threadID = id;

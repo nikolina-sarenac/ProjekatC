@@ -2,6 +2,8 @@
 int Select(SOCKET socket, bool read, HANDLE semaphore);
 int  Select2(SOCKET socket, bool read);
 void SendFinishSignal(List* head);
+int Receive(SOCKET acceptedSocket, char* recvbuf, int size, HANDLE sem);
+int Send(SOCKET acceptedSocket, char* messageToSend, int len, HANDLE sem);
 
 int Select2(SOCKET socket, bool read) {
 	while (!_kbhit()) {
@@ -76,7 +78,39 @@ void SendFinishSignal(List * head)
 {
 	List* temp = head;
 	while (temp != NULL) {
-		ReleaseSemaphore(ListSemaphoreAt(temp->num, head), 2, NULL);
+		ReleaseSemaphore(ListSemaphoreAt(temp->id, head), 2, NULL);
 		temp = temp->next;
 	}
+}
+
+int Receive(SOCKET acceptedSocket, char* recvbuf, int size, HANDLE sem)
+{
+	int brojac = 0;
+
+	while (brojac < size) {
+		if (Select(acceptedSocket, true, sem) == 1)
+			return -1;
+		int res = recv(acceptedSocket, recvbuf + brojac, size - brojac, 0);
+		if (res > 0)
+			brojac += res;
+		else {
+			break;
+		}
+	}
+	return brojac;
+}
+
+int Send(SOCKET acceptedSocket, char* messageToSend, int len, HANDLE sem)
+{
+	int brojac = 0;
+
+	while (brojac < len) {
+		if (Select(acceptedSocket, false, sem) == 1)
+			return -1;
+		int res = send(acceptedSocket, messageToSend + brojac, len - brojac, 0);
+		if (res > 0) {
+			brojac += res;
+		}
+	}
+	return brojac;
 }

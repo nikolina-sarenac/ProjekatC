@@ -68,7 +68,7 @@ int PopFromQueue2(List** head, char *message, int id) {
 	if (*head != NULL) {
 		List *temp = *head;
 
-		while (temp->num != id) {
+		while (temp->id != id) {
 			temp = temp->next;
 		}
 

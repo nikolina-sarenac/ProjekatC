@@ -83,6 +83,7 @@
     <ClCompile Include="Server.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="ClientFunctions.h" />
     <ClInclude Include="Dictionary.h" />
     <ClInclude Include="Helper.h" />
     <ClInclude Include="ListAndQueue.h" />
