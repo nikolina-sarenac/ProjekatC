@@ -7,8 +7,8 @@ typedef struct list
 	DWORD threadID;
 	HANDLE clienth;
 	HANDLE semaphore;
-	struct list *next;
 	struct queue *clientMessages;
+	struct list *next;
 }List;
 
 void ListAdd(int idber, SOCKET s, DWORD id, HANDLE h, HANDLE sem, List **head);

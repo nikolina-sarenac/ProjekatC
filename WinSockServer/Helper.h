@@ -106,10 +106,13 @@ int Send(SOCKET acceptedSocket, char* messageToSend, int len, HANDLE sem)
 
 	while (brojac < len) {
 		if (Select(acceptedSocket, false, sem) == 1)
-			return -1;
+			return -2;
 		int res = send(acceptedSocket, messageToSend + brojac, len - brojac, 0);
 		if (res > 0) {
 			brojac += res;
+		}
+		else if (res < 0) {
+			return res;
 		}
 	}
 	return brojac;

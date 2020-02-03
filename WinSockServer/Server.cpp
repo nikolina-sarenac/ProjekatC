@@ -273,8 +273,10 @@ int PublisherFunction(int id, SOCKET acceptedSocket, HANDLE semaphore)
 			ListRemoveAt(id, &listHead);
 			return 0;
 		}
-		else if (iResult == -1)
+		else if (iResult == -1) 
+		{
 			return 0;
+		}
 		else
 		{
 			closesocket(acceptedSocket);
@@ -312,13 +314,14 @@ int SubscriberFunction(int id, SOCKET acceptedSocket, HANDLE semaphore)
 		if (ret > 0) {
 			int iResult = Send(acceptedSocket, message, MAX_SIZE, semaphore);
 
-			if (iResult == -1) {   // dobijen signal na semaforu
+			if (iResult == -2) {   // dobijen signal na semaforu
 				free(message);
 				return 0;
 			}
-			else if (iResult == SOCKET_ERROR)
+			else if (iResult == -1)
 			{
-				printf("send failed with error: %d\n", WSAGetLastError());
+				free(message);
+				printf("Client %d disconnected.\n", id);
 				closesocket(acceptedSocket);
 				DictionaryRemoveClient(id, &dictionary);
 				ListRemoveAt(id, &listHead);
